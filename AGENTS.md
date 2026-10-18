@@ -47,9 +47,11 @@ validation.** Chapters 2-10 and the negotiation layer are not built yet.
 - Real Python: `C:\Users\Artem Gavrilov\AppData\Local\Python\bin\python.exe` (the
   `python` alias is the Store stub - use the full path).
 - Repo: `C:\Users\Artem Gavrilov\Documents\Code\Void Reckoning`.
-  - Git repo with **no commits and no remote**. Intended remote:
-    `https://github.com/malltshik/void-reckoning` (not wired). **Never commit/push
-    without an explicit request.**
+  - Git repo, default branch **`main`**, remote **`origin`** =
+    `https://github.com/malltshik/void-reckoning`. **Never commit/push without an explicit
+    request.** (Initial push 2026-10-19: the whole tree was rebased onto GitHub's README
+    commit; the local `master` was renamed `main`. No committer identity is configured, so
+    commits need `git -c user.name=... -c user.email=...`.)
 - `grep` tool fails on the huge single-line source HTML
   (`Ripgrep JSON record exceeded 65536 bytes`). Use PowerShell string ops for that file.
 
