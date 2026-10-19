@@ -5,7 +5,7 @@ contract, PICO-8 gotchas, tooling and shared rules. This file carries only what 
 to Chapter 1**, so work on later chapters isn't burdened by it. Story canon:
 `chapters/ch01/lore.md`.
 
-- **Cart budget:** 8018 / 8192 tokens (174 free) at the 2026-10-19 handover - measure with
+- **Cart budget:** 8080 / 8192 tokens (112 free) at the 2026-10-19 handover - measure with
   `p8check tokens ch01` before and after any change. ~40k / 65k chars. Each chapter is its own
   cart with its own 8192 budget (root `AGENTS.md` section 9). Web export: ~29k chars once comments
   are stripped, ~4.7k compressed bytes under the 15,360 limit (`p8check size ch01`).
@@ -33,8 +33,9 @@ to Chapter 1**, so work on later chapters isn't burdened by it. Story canon:
 2. **Outpost** (150,110): the first dock triggers the **outpost officer** dialogue (reuses
    portrait 2's art), which sets `ohint=true` / `qs=1`. Until then the mission pane reads "no
    active orders. hail the outpost." Services: REPAIR / REFUEL / SELL ORE / BUY MISSILE / BUY
-   HYPER-CELL. Docking autosaves. REFUEL is partial: a short wallet buys as many units as it can
-   afford (repair is still all-or-nothing).
+   HYPER-CELL. Docking autosaves. REFUEL and REPAIR are both partial: a short wallet buys as many
+   units of fuel / HP as it can afford (`units=min(need,flr(p.credits/rate))`), 0 units -> `NOT
+   ENOUGH $`.
 3. **Quest stages** (`qs`): `1` salvage -> `2` first ore sale -> `3` hyper-cell fitted (gate
    unlocked). The radar compass needle points at the outpost, then the gate (`objective()`).
 4. **Jump Gate** (400,400): `X` -> `GATE LOCKED - FIT A HYPER-CELL` until `qs>=3`, then the
@@ -74,4 +75,4 @@ to Chapter 1**, so work on later chapters isn't burdened by it. Story canon:
 
 Second enemy (raider - sprites exist in the sheet), charge meter (replaced by the gold ring at
 full charge), dead-space scan side objective, hit flash, low-HP/fuel HUD blink, one-time
-control hint, extra station art.
+control hint.

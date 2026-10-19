@@ -30,22 +30,28 @@ end
 
 function draw_stations()
  for s in all(stations) do
+  local x=s.x local y=s.y
   if s.kind=="outpost" then
-   rectfill(s.x-6,s.y-6,s.x+6,s.y+6,9)
-   rect(s.x-6,s.y-6,s.x+6,s.y+6,7)
-   line(s.x-6,s.y,s.x+6,s.y,7)
-   line(s.x,s.y-6,s.x,s.y+6,7)
-   local c=10
-   if frame%30<15 then c=7 end
-   circ(s.x,s.y,11,c)
-   print("OUTPOST",s.x-13,s.y-19,GT)
+   -- domed outpost on a lit moon chunk (ref: dome base)
+   circfill(x,y+5,12,1)
+   circfill(x-2,y+3,9,13)
+   circfill(x-5,y+7,2,2)
+   circfill(x+4,y+7,2,2)
+   circfill(x,y-2,8,12)
+   circ(x,y-2,8,1)
+   rectfill(x-3,y+2,x+3,y+7,5)
+   rectfill(x-1,y+4,x+1,y+6,9)
+   pset(x+7,y-6,frame%30<15 and 8 or 2)
+   print("OUTPOST",x-13,y-22,GT)
   else
-   local c=10
-   if frame%30<15 then c=11 end
-   rect(s.x-4,s.y-4,s.x+4,s.y+4,c)
-   line(s.x-8,s.y,s.x+8,s.y,c)
-   line(s.x,s.y-8,s.x,s.y+8,c)
-   print("GATE",s.x-9,s.y-16,GT)
+   -- relay satellite: hull, solar panels, beacon (ref: satellite)
+   rectfill(x-2,y-5,x+2,y+5,13)
+   rectfill(x-1,y-3,x+1,y+2,12)
+   rectfill(x-9,y-3,x-4,y+3,14)
+   rectfill(x+4,y-3,x+9,y+3,14)
+   line(x,y-5,x,y-9,5)
+   circfill(x,y-10,1,frame%30<15 and 7 or 12)
+   print("GATE",x-9,y-18,GT)
   end
  end
 end

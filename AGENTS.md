@@ -251,9 +251,9 @@ Each chapter cart has its **own** 8192 tokens, but the engine is included in eve
 engine tokens are paid N times: **trimming `common/` is the best investment**, and engine
 additions must be justified. Current figure per chapter is in its own `AGENTS.md`.
 
-Where the tokens are (2026-10-19, Ch1 = 8018): engine **6307** (`10_entities` 1699, `40_ui` 1199,
-`20_world` 1088, `00_core` 944, `30_combat` 844, `60_dialogue` 528) + chapter content **~1711**
-(`72_story` 897, `71_station` 515, `70_world` 299). So a new chapter has only ~1.9k tokens for
+Where the tokens are (2026-10-19, Ch1 = 8080): engine **6307** (`10_entities` 1699, `40_ui` 1199,
+`20_world` 1088, `00_core` 944, `30_combat` 844, `60_dialogue` 528) + chapter content **~1773**
+(`72_story` 897, `71_station` 536, `70_world` 340). So a new chapter has only ~1.9k tokens for
 its own content, and the unbuilt negotiation layer / boss will not fit without trimming the
 engine or leaving unused subsystems out of a chapter's `#include` list (DESIGN section 13). If you are out of room: measure first (`p8check tokens`), then look for
 duplicated helpers (`wrap` vs `wrap_off`), one-use locals, and defaults for params every caller
@@ -311,9 +311,9 @@ starting a chapter, copy the previous cart so the label and data come along.
 
 - **Not built:** the docked negotiation layer (state 3), Ch2-10, upgrade tiers (DESIGN section 8),
   the Paragon boss, a real `.p8.png` release label per chapter.
-- **Cut for the 8192-token wall, re-addable now there is headroom** (Ch1 has ~200 free): second
+- **Cut for the 8192-token wall, re-addable now there is headroom** (Ch1 has ~112 free): second
   enemy (raider; sprites already in the sheet), charge meter, hit flash, low-HP/fuel HUD blink,
-  one-time control hint, station art, dead-space scan side objective.
+  one-time control hint, dead-space scan side objective.
 - **Possible engine trims** (each pays back in every chapter): merge `wrap`/`wrap_off`
   (`00_core` / `60_dialogue`; note `wrap("")` returns one empty line, which `draw_term` relies on
   for cursor placement), shrink the `lc()` print wrapper, generalise `draw_stations`.
@@ -321,6 +321,10 @@ starting a chapter, copy the previous cart so the label and data come along.
 - **Open design question:** how progress crosses chapter carts (checklist step 6 above).
 ## 14. Changelog (brief - full detail is in git)
 
+- [2026-10-19] **Outpost polish:** REPAIR is now partial like REFUEL (a short wallet buys what it
+  can afford, 0 units -> `NOT ENOUGH $`; smoke asserts partial + no-money); both stations redrawn
+  from primitives - outpost is a domed base on a lit moon chunk, gate is a solar-panel relay
+  satellite (`draw_stations` in `chapters/ch01/src/70_world.lua`). Ch1: 8080/8192 tokens.
 - [2026-10-19] **Playtest fixes:** full cargo no longer magnetises ore; REFUEL is partial when short
   on cash; reinforcements arrive as a 3-5 patrol (`FOE_CAP` 4 -> 8) so loitering is dangerous; each
   new game gets a per-run layout (`SEED`, saved with the run so continue = same system); the

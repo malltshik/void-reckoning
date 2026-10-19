@@ -102,6 +102,12 @@ ck(dget(8)==1,"docking saves")
 p.credits=100 p.hp=90
 press(5)
 ck(p.hp==p.mhp and p.credits==100-10*ECO.repair,"repair hull")
+p.hp=90 p.credits=10
+press(5)
+ck(p.hp==90+flr(10/ECO.repair) and p.credits==10-flr(10/ECO.repair)*ECO.repair,"a short wallet repairs what it can")
+p.hp=90 p.credits=0
+press(5)
+ck(p.hp==90 and p.credits==0,"no money, no repair")
 press(3)
 p.fuel=50 p.credits=100
 press(5)

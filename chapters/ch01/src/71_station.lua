@@ -16,9 +16,11 @@ function dock(s)
   {label="REPAIR HULL ("..ECO.repair.."$/HP)",act=function(m)
    local need=ceil(p.mhp-p.hp)
    if need<=0 then m.sub="HULL AT MAXIMUM" return end
-   local cost=need*ECO.repair
-   if p.credits>=cost then p.credits-=cost p.hp=p.mhp m.sub="REPAIRED -"..cost.."$"
-   else m.sub="NOT ENOUGH $" end
+   local units=min(need,flr(p.credits/ECO.repair))
+   if units<=0 then m.sub="NOT ENOUGH $" return end
+   p.credits-=units*ECO.repair
+   p.hp=min(p.mhp,p.hp+units)
+   m.sub="+"..units.." HP -"..units*ECO.repair.."$"
   end},
   {label="REFUEL ("..ECO.fuel.."$/UNIT)",act=function(m)
    local need=ceil(p.mfuel-p.fuel)

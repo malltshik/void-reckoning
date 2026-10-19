@@ -148,7 +148,8 @@ Fuel 100/100 (thrust **0.06/f**, doubled 2026-10-19) · Missiles 10/10 · Credit
   (`chapters/ch01/src/70_world.lua`) and `FOE_CAP`/`WAVE_*`/`SPAWN_*` (`common/src/10_entities.lua`).
   *(2026-10-19: cargo 3→10, ore sell 30→10, cell 150→250 — the cell must be a real grind, not a
   short hop. Station menu sells **missiles at 15 CR**; solid rocks have 12 hp so a charged shot
-  mines faster.)*
+  mines faster. REPAIR and REFUEL are **partial** — a short wallet buys as many HP/units as it can
+  afford (`units=min(need,flr(credits/rate))`), 0 units -> `NOT ENOUGH $`.)*
 - **Upgrade pacing rule:** *best-in-slot tier ≈ current chapter − 1 (casual) / chapter (min-maxer)*,
   capped at Tier 4. Shop stock is era-gated; cost is the real throttle.
   (→ End of Ch3 ≈ Tier 2 comfortably, second Tier-2 if you chase content, Tier-3 weapon only with grind.)
