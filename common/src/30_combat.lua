@@ -7,8 +7,6 @@ function ang_lerp(a,b,t)
 end
 
 function fire_primary(power)
- power=power or 1
- tut=0
  local dmg=8*power
  local spd=4+(power-1)*0.5
  p.wcd=8
@@ -23,7 +21,7 @@ end
 function fire_missile()
  if p.mis<=0 then return end
  p.mis-=1
- add(missiles,{x=p.x,y=p.y,a=p.a,dx=cos(p.a)*1.5,dy=sin(p.a)*1.5,life=300})
+ add(missiles,{x=p.x,y=p.y,a=p.a,s=1.5,life=300})
  sfx(1,3)
 end
 
@@ -43,26 +41,24 @@ function update_bullets()
  end
 end
 
+-- homing missile: steers toward the nearest foe within 200px (Manhattan) while its
+-- speed ramps up. Heading is steered directly (no inertia), so it actually connects.
 function update_missiles()
  for i=#missiles,1,-1 do
   local m=missiles[i]
   local best=nil
-  local bd=99999
+  local bd=200
   for j=1,#foes do
    local f=foes[j]
    local d=abs(f.x-m.x)+abs(f.y-m.y)
    if d<bd then bd=d best=f end
   end
   if best then
-   local want=atan2(best.x-m.x,best.y-m.y)
-   m.a=ang_lerp(m.a,want,0.06)
+   m.a=ang_lerp(m.a,atan2(best.x-m.x,best.y-m.y),0.1)
   end
-  m.dx+=cos(m.a)*0.25
-  m.dy+=sin(m.a)*0.25
-  local sp=sqrt(m.dx*m.dx+m.dy*m.dy)
-  if sp>3.5 then m.dx*=3.5/sp m.dy*=3.5/sp end
-  m.x+=m.dx
-  m.y+=m.dy
+  m.s=min(m.s+0.1,3.5)
+  m.x+=cos(m.a)*m.s
+  m.y+=sin(m.a)*m.s
   m.life-=1
   if m.life<=0 then deli(missiles,i) end
  end
@@ -81,16 +77,16 @@ function collide_all()
      break
     end
    end
-    if not hit then
-     for j=1,#roids do
-      local r=roids[j]
-      if r.solid and hit2(b.x,b.y,r.x,r.y,r.r) then
-       hit_roid(j,b.d)
-       hit=true
-       break
-      end
+   if not hit then
+    for j=1,#roids do
+     local r=roids[j]
+     if r.solid and hit2(b.x,b.y,r.x,r.y,r.r) then
+      hit_roid(j,b.d)
+      hit=true
+      break
      end
     end
+   end
    if hit then deli(bullets,i) end
   else
    if hit2(b.x,b.y,p.x,p.y,5) then

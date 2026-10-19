@@ -46,7 +46,7 @@ Everything below is the full 10-chapter design.
   pipe-delimited strings (`"A|B|C"`) parsed by one lookup, so a whole chapter of text ≈ 1 token.
 - **Compressed-size limit** (<15,360 bytes) applies only to `.p8.png`/`.p8.rom` **and the html
   web-player export**, not `.p8`. (A near-full cart trips it; keep big raw data — e.g. the title
-  font — in `__map__`, not in code. See AGENTS §12.)
+  font — in `__map__`, not in code. See AGENTS §5.)
 - Author in `#include` chunks; **each chapter ships as its own cart** (`.p8.png` flattens includes).
 
 ---
@@ -58,8 +58,10 @@ Everything below is the full 10-chapter design.
 - **The wormhole** dumped 1393 at the corridor's isolated edge — officially "contaminated /
   enemy space," where the Imperium assumes no one survives (its favored disposal route).
   "No escape" is Imperium framing; deeper passage needs clearance/keys the story provides.
-- **In-system space:** a flown field (~640×640) with a **scrolling camera** and an
-  off-screen **radar/minimap**. Generous room to fight, hide behind planets, and dodge hazards.
+- **In-system space (as built):** a flown **disc** — a 512×512 grid centred on `ARX,ARY` with a
+  soft radius `ARR=380`; past it is empty **dead space** (no spawns; dry fuel there is death).
+  The camera keeps the ship screen-centred (no edge clamp) and a round **radar** sits bottom
+  right with a compass needle for the current objective. Room to fight, mine, and dodge rocks.
 - **World gen = authored skeleton + procedural dressing.**
   - *Authored:* key stations, the plot planet/target, quest beats, spawn intent, hazard type.
   - *Seeded* (`srand(1000+chapter)`): planet positions/radii/palette, asteroid density, background, ambient traffic.
@@ -77,21 +79,23 @@ Everything below is the full 10-chapter design.
 
 ---
 
-## 5. Flight & combat (baseline values, tunable)
+## 5. Flight & combat (as built; all values tunable)
 
-Rotation + thrust with inertia; **forward-firing**, 16 rotation angles; homing missiles secondary.
+**Snappy 8-way flight, no inertia drift** (changed from the original rotate-and-thrust baseline
+on 2026-10-18 — it plays better on a d-pad): the nose snaps to the input direction, velocity eases
+to the target and stops quickly. **Forward-firing**; 8 sprite angles; homing missiles secondary.
 Depth comes from enemy behavior and hazards, not input complexity.
 
-| Constant | Value |
+| Constant | Value (code) |
 | :-- | :-- |
-| Player acceleration (`acc`) | 0.12 px/frame |
-| Player max velocity (`max_vel`) | 2.5 px/frame |
-| Friction/drag | 0.96 × per frame |
-| Rotation speed | 0.08 rad/frame (16 vectors) |
-| Missile acceleration | 0.25 px/frame |
-| Missile turn rate | 0.04 rad/frame (homes nearest target) |
-| Asteroid impact damage | `ceil(size × velocity × 1.5)` |
-| Map wrap | optional; camera scrolls a ~640×640 field |
+| Player speed | 1.8 px/frame (`update_flight`) |
+| Velocity easing | 35% of the gap to target per frame (quick start/stop) |
+| Fuel burn | 0.06 per thrust frame |
+| Charged cannon | hold X up to `CHGMAX=45` frames → power 1–3; power 3 adds a ±spread pair |
+| Missile | launches at 1.5 px/f, +0.1/f up to 3.5; heading lerps 0.1/f toward the nearest foe within 200 px (Manhattan); 40 dmg; 300-frame life |
+| Asteroid impact damage | `ceil(size × velocity × 1.5)` + knockback |
+| Foe ram | 2 dmg + knockback, 30-frame cooldown |
+| World | no wrap; the disc described in §3 |
 
 **Vitals (start):** HP 100/100 · Shield 50/50 (regen 0.10/f, 180-frame delay on hit) ·
 Fuel 100/100 (thrust **0.06/f**, doubled 2026-10-19) · Missiles 10/10 · Credits 150 (Ch1 starts at **40 CR** - see §8). Base weapon: L1 Laser (8 dmg, 4.0 vel, 8f cooldown).
@@ -139,7 +143,8 @@ Fuel 100/100 (thrust **0.06/f**, doubled 2026-10-19) · Missiles 10/10 · Credit
   *not* affordable on start cash — the player must salvage **and** fight. Patrols are **rare** (a
   foe roughly every 20–30s, max 4 alive) so exploration is calm. Asteroids are solid
   (`ROID_CAP=22`) and **top back up over time** (`ROID_RESPAWN=150`); missiles damage them.
-  Values live in `ECO` (`50_station.lua`) and `foes_def`/`FOE_CAP` (`10_entities.lua`).
+  Values live in `ECO` (`chapters/ch01/src/71_station.lua`), `foes_def`/`FOE_POOL`
+  (`chapters/ch01/src/70_world.lua`) and `FOE_CAP` (`common/src/10_entities.lua`).
   *(2026-10-19: cargo 3→10, ore sell 30→10, cell 150→250 — the cell must be a real grind, not a
   short hop. Station menu sells **missiles at 15 CR**; solid rocks have 12 hp so a charged shot
   mines faster.)*
@@ -179,6 +184,11 @@ Fuel 100/100 (thrust **0.06/f**, doubled 2026-10-19) · Missiles 10/10 · Credit
 | `E_ELITE_SPEC` | Vane Elite Guard | 350 | 200 | 2.4 | Disruptor 30 | fast pursuit; ECM under 20% shield | 450–600 CR |
 
 Enemies read behavior from a shared AI table with per-archetype params (data, not code branches).
+*As built (Ch1):* only `scout` exists, in `foes_def` (`chapters/ch01/src/70_world.lua`) — speed 1.0
+(not 2.0: it chases on acceleration and circles inside 40 px), range 90, 15 CR bounty, 30%
+missile drop. The other archetypes are baselines for later chapters; each chapter defines the
+`foes_def` kinds it uses plus a `FOE_POOL` for reinforcements. Sprites for raider (16) and
+militia (24) already exist in the sheet.
 
 ---
 
@@ -250,58 +260,60 @@ negotiation portraits (start as procedural dither-silhouettes; upgrade to real a
 
 ## 13. Technical architecture
 
-**States:** `0 Title · 1 Prologue/Cutscene · 2 Flight · 3 Comms (overlay, pauses flight) ·
-4 Station · 5 Jump/Route · 6 Game Over · 7 Ending`.
+**States:** `0 Title · 1 Prologue/Cutscene · 2 Flight · 3 Comms/negotiation (reserved, unbuilt) ·
+4 Station · 5 Jump/Route · 6 Game Over · 7 Ending · 8 Ship menu`.
 
 **Entity model:** flat pooled tables with swap-remove; overflow-safe distance collision (axis-guard
-before squaring — see AGENTS.md gotcha: 16.16 fixed point overflows past ~181px); no spatial hash.
-Soft caps: **~12 enemies, ~24 asteroids, ~64 projectiles, ~16 pickups** live; Paragon = 4 pinned
-sprites + sub-hits. Off-screen sim culled; hazards on timers.
+before squaring — see AGENTS.md §5: 16.16 fixed point overflows past ~181px); no spatial hash.
+Soft caps as built: `FOE_CAP=4` live foes, `ROID_CAP=22` solid rocks (+ background rocks), a few
+dozen projectiles/particles. Off-screen sim is not culled (the field is small).
 
-**Token budget (8,192 target):**
+**Token budget (hard 8,192 per cart) — reality check.** The original plan was an even split across
+systems (flight 450, enemy AI 900, negotiation 700, boss 700, …). As built, the **engine alone
+(`common/src`) costs 6,243 tokens** and every chapter cart pays it again; Chapter 1's own content is
+~1,740 tokens (world 299 · station 494 · story 945), total 7,981 → **~210 free**.
 
-| System | ~Tokens |
+| Engine file | Tokens |
 | :-- | --: |
-| Core / init / state machine | 400 |
-| Player physics, input, camera | 450 |
-| Entity system, collision, pooling | 700 |
-| Enemy AI (5 archetypes) | 900 |
-| Weapons / projectiles / missiles / ECM | 650 |
-| World generation + hazards | 550 |
-| Station & economy menus | 900 |
-| Dialogue engine (parse, typewriter, choices) | 450 |
-| Negotiation engine (leverage, timer, disposition) | 700 |
-| UI / HUD / radar | 600 |
-| Story flow, quests, cutscenes | 900 |
-| Final boss (3 phases) | 700 |
-| Music/SFX drivers | 150 |
-| Title / pause / route menus | 350 |
-| **Reserve** | **692** |
+| `00_core` (init/save/state machine/helpers) | 910 |
+| `10_entities` (flight sim, foes, rocks, drops, damage) | 1,666 |
+| `20_world` (system gen, flight drawing, fade) | 1,091 |
+| `30_combat` (guns, missiles, collisions) | 844 |
+| `40_ui` (menus, HUD, radar, title) | 1,199 |
+| `60_dialogue` (portrait dialogue runner) | 528 |
+| `01_font` | 5 |
 
-Reserve **~22–25k of the 65,535 chars** for dialogue/narration (~2–2.5k chars/chapter, punchy register).
+Consequences for planning: the unbuilt **negotiation engine (~700)** and **boss (~700)** do not fit
+next to the current engine without trimming it, so (a) every engine token saved is paid back in
+all ten carts, (b) chapters that don't need a subsystem can leave it out of their `#include` list
+(e.g. a cutscene-heavy chapter without full combat), and (c) the negotiation layer should be
+designed to reuse `menu_*`/`dlg_*` rather than add a new UI. Measure with `p8check tokens`.
+Reserve **~22–25k of the 65,535 chars** for dialogue/narration (Ch1 uses ~40k total).
 
 **Source layout & build:**
 
 ```
-common/src/00_core.lua      # init, state machine, input, state dispatch
+common/src/00_core.lua      # init, save/load/recover, state machine, helpers, print override
 common/src/01_font.lua      # custom title font (memcpy from __map__ -> 0x5600)
-common/src/10_entities.lua  # pools, collision, spawn
-common/src/20_world.lua     # system gen, camera, flight drawing
-common/src/30_combat.lua    # weapons, projectiles, missiles
-common/src/40_ui.lua        # HUD, menus, text/typewriter
-common/src/60_dialogue.lua  # pipe-string parse, dialogue engine
-common/tools/gen_gfx.py     # art -> __gfx__  (gen_audio.py -> __sfx__/__music__; gen_fontmap.py -> __map__)
+common/src/10_entities.lua  # flight sim, foes AI, rocks, drops, particles, damage, camera
+common/src/20_world.lua     # load_system (seeded dressing), flight drawing, fade trail, sprites
+common/src/30_combat.lua    # weapons, projectiles, missiles, collisions
+common/src/40_ui.lua        # text helpers, menus, HUD, radar, title, game over
+common/src/60_dialogue.lua  # portrait dialogue runner (scripts live in the chapter)
+common/tools/               # p8check.py (tokens/smoke/shots), shotdiff.py, harness/, gen_*.py
 chapters/ch01/ch01.p8       # thin cart: #include lines + gfx/label/map/sfx/music data
-chapters/ch01/src/50_station.lua  # dock services, economy
-chapters/ch01/src/70_story.lua    # chapter flow, quests, cutscenes
-chapters/ch01/src/80_boss.lua     # Paragon (Ch10 stub)
+chapters/ch01/src/70_world.lua    # stations/foes hooks, enemy roster, station drawing
+chapters/ch01/src/71_station.lua  # dock services, economy
+chapters/ch01/src/72_story.lua    # dialogue scripts, quests, cutscenes, warp, ending
+chapters/ch01/tests/              # smoke.lua + shots.lua drivers for p8check
 docs/  build_web.ps1              # Pages player: index.html shell + <ch>.js per cart
-tmp/                              # gitignored local scratch (research, test harnesses)
-DESIGN.md  AGENTS.md  chapters/<ch>/lore.md
+tmp/                              # gitignored local scratch (research, screenshots)
+DESIGN.md  AGENTS.md  chapters/<ch>/lore.md  chapters/<ch>/AGENTS.md
 ```
 
 One cart **per chapter** (each its own 8192-token budget); `#include` resolves relative to
-the cart file's folder, so the Ch1 cart uses `../../common/src/...` + `src/...`.
+the cart file's folder, so the Ch1 cart uses `../../common/src/...` + `src/...`. The engine/chapter
+boundary is the **chapter contract** in `AGENTS.md` §4 — engine code never contains chapter content.
 
 Ship via `EXPORT`/`SAVE` to `.p8.png` (includes flatten automatically), and to a browser
 player via `build_web.ps1` (site in `docs/`). All code lowercase, PICO-8 conventions, no
@@ -310,13 +322,16 @@ external libs.
 **Save (`cartdata`):** pack into the 64 numeric slots — current chapter, branch flag, credits,
 missile count, upgrade tiers (3 small ints), quest_step, a story-flags bitfield, and a
 seen-dialogue bitset. Version-tag the save.
-*(2026-10-19 Ch1: partial — `save_game`/`load_game` in `00_core.lua` persist chapter/qs/ohint/
-credits/ore/missiles to `cartdata("vrk1")`, saved on dock, jump and ship-menu EXIT; the title
-offers `X continue` / `O new game`. Upgrade tiers and dialogue bitset still to come.)*
+*(2026-10-19 Ch1: partial — `save_game`/`load_game` in `00_core.lua` persist chapter (slot 0),
+`qs`, `ohint`, credits, ore, missiles (slots 1–5) and a has-save flag (slot 8) to `cartdata("vrk1")`,
+saved on dock, jump, recover and ship-menu EXIT; the title offers `X continue` / `O new game`.
+Continue always resumes docked at the outpost. Upgrade tiers and the dialogue bitset are still to
+come; a cart only continues a save tagged with its own `CHAPTER`.)*
 
-**Test loop:** I run `pico8 -x chapters\ch01\ch01.p8` headless to catch syntax/runtime errors and read
-`printh` diagnostics; the user runs interactive playtests and reports. Token/char counts verified in
-PICO-8's editor / at export.
+**Test loop:** `python common/tools/p8check.py all ch01` — exact token count, a scripted headless
+playthrough (40+ assertions on the real game logic), and 17 staged screenshots with a text-clipping
+sweep (the agent can read the PNGs). The user still does interactive playtests for feel/balance;
+audio is untested by tooling. See `AGENTS.md` §7.
 
 ---
 

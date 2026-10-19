@@ -1,8 +1,47 @@
--- 70_story: chapter flow, cutscenes, quest logic, jump
+-- 72_story: Chapter 1 story - dialogue scripts, mission log, cutscene flow, warp, ending
+
+-- dialogue scripts (format + runner: common/src/60_dialogue.lua).
+-- Speaker patch tables keep scripts cheap to author: PP = pilot, RR = rooke / officer.
+local PP={w=1}
+local RR={w=2}
+local NN={w=0}   -- narration: text only, no portrait drawn
+
+-- a script is a flat list: patch tables switch speaker, strings get typed out
+talks={
+ intro={
+  NN,
+  "IMPERIUM CENTRAL COMMAND",
+  "COURIER 1393 - BRIEFING",
+  "ASSET: SEALED",
+  "DESTINATION: BR-11K0",
+  RR,
+  "your training campaign is over, pilot. you're ready for your first mission.",
+  "eleven thousand applicants. we chose you.",
+  "this is a top-secret delivery run. even i don't know what's in the container.",
+  "and to be honest? i don't want to know.",
+  PP,
+  "...",
+  RR,
+  "deliver it at all costs. may the imperium protect you.",
+ },
+ officer={
+  RR,
+  "so. an imperium courier, out here. in this system that uniform is a death sentence.",
+  "your comms are dead and your hyper-cell is shot. you are not going anywhere without one.",
+  "br-11k0? that chart's been scrubbed clean. nobody out here goes there.",
+  "the white rocks carry ore. break them, sell it here, and i will fit you a spare cell.",
+  "there's a word scratched on the wall in here. i can't read it. neither will you.",
+  "then take the jump gate and get out. i never saw you. neither did anyone else.",
+  PP,
+  "understood.",
+ },
+}
+
+-- per-talk speaker-name overrides (the officer reuses the second portrait's art)
+talkname={officer="outpost officer"}
 
 -- mission log for the ship systems menu: [main] objective vs [side] activities
 function mission_lines()
- if chapter!=1 then return {} end
  if not ohint then return {"no active orders. hail the outpost."} end
  local m=qs==1 and "break the white rocks and sell ore at the outpost."
   or qs==2 and "buy a hyper-cell at the outpost."
@@ -97,7 +136,6 @@ end
 -- cutscene: the ship races through open space and is swallowed by the wormhole,
 -- handing off to draw_wormhole (the tunnel collapse) on the next page.
 function draw_fly()
- cls(0)
  local t=spt
  -- star streaks whipping past, the wormhole swelling dead ahead, then a white flash
  for i=1,24 do
@@ -109,6 +147,8 @@ function draw_fly()
  for r=0,2 do circ(100,64,wr*(0.45+r*0.28),1+r) end
  circfill(100,64,wr*0.34,13)
  circfill(100,64,wr*0.16,7)
+ -- the ship races in from the left and reaches the core just before the flash
+ spr(SPR_PLAYER,8+min(t,102)*0.9,50)
  if t>104 then circfill(100,64,min(140,(t-104)*18),7) end
 end
 
@@ -121,6 +161,9 @@ function draw_wormhole()
   local a=frame*0.02+i/8
   line(cx+cos(a)*24,cy+sin(a)*24,cx+cos(a)*96,cy+sin(a)*96,wc[1+flr(rnd(#wc))])
  end
+ -- the ship, dragged into the collapsing core, spins as it is swallowed
+ local sa=spt*0.05
+ spr(SPR_PLAYER+ship_frame(sa),cx-4,cy-4)
  if spt>120 then circfill(cx,cy,min(60,(spt-120)*2),7) end
 end
 
@@ -129,21 +172,23 @@ function start_jump()
   msg_set("GATE LOCKED - FIT A HYPER-CELL")
   return
  end
-  state=5
-  jt=0
-  sfx(7,3)
+ state=5
+ jt=0
+ sfx(7,3)
 end
 
 -- warp cutscene: the gate hurls you clear of the system, but your destination is
 -- still unknown. Narrated in white (dialogue style) with no portraits.
+-- Keep every line <= 32 chars: the screen is 128px and glyphs are 4px (shots test checks).
 JPER=45
 jlines={
  "the gate folds shut behind you.",
  "the system is gone.",
  "no patrol. no hunter.",
- "but this is not your destination -",
+ "this is not your destination -",
  "only the far side of a doorway.",
- "the crate waits. the coordinates do not.",
+ "the crate waits.",
+ "the coordinates do not.",
  "(to be continued...)"
 }
 
@@ -156,7 +201,6 @@ function update_jump()
 end
 
 function draw_jump()
- cls(0)
  -- warp: radial streaks racing outward from the core
  for i=0,19 do
   local a=i/20
@@ -170,4 +214,12 @@ function draw_jump()
   print(k,flr((128-sw(k))/2),12+(i-1)*11,7)
  end
  if jt>#jlines*JPER and frame%40<25 then pc(BX.." continue",118,GT) end
+end
+
+function draw_ending()
+ pc("CHAPTER 1 COMPLETE",48,GT)
+ pc("THE CRATE AWAITS.",64,GT)
+ pc("TO BE CONTINUED",82,GT)
+ if got>0 then pc("STANDBY...",106,GT)
+ elseif frame%40<25 then pc("press "..BX,106,GT) end
 end

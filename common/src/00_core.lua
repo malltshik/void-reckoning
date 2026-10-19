@@ -1,9 +1,6 @@
 -- void reckoning
 -- 00_core: init, main loop, state machine
 
-sys_w=512
-sys_h=512
-
 -- pico-8 pscii button glyphs: 142 = O, 151 = X (both 8px wide). lc() leaves >90 alone.
 -- (143 is a diamond, NOT the X key -- that was the earlier prompt bug.)
 BO=chr(142)
@@ -30,19 +27,20 @@ ARR=380
 -- states: 0 title, 1 story, 2 flight, 4 station, 5 jump, 6 gameover, 7 ending, 8 menu
 function _init()
  cartdata("vrk1")
- trail=true
- build_fades()
  mtrack=-1
  mtcombat=false
  set_music(MUS_FLIGHT)
- state=0
  frame=0
- chapter=1
- init_player()
- load_system(chapter)
- init_story()
- tut=700
+ new_game()
  hassave=load_game()
+end
+
+-- a fresh run in memory (never touches the save)
+function new_game()
+ init_player()
+ load_system(CHAPTER)
+ init_story()
+ state=0
 end
 
 function init_player()
@@ -59,44 +57,42 @@ function init_player()
  camy=0
  msg=""
  msgt=0
- active=nil
 end
 
+-- "new game" from the title / after the ending: also forget the save
 function reset_game()
- init_player()
- chapter=1
- load_system(chapter)
- init_story()
+ new_game()
  hassave=false
  dset(8,0)
- tut=700
- state=0
 end
 
 -- progress persists in the cartdata slots (DESIGN section 13): qs/ohint/credits/ore/
--- missiles/hp/fuel. Saved on dock, on jump, and on quit; loaded once at boot.
+-- missiles. Saved on dock, on jump and on quit; loaded once at boot. A save always
+-- resumes docked at the outpost (`active`, set by load_system). Slot map: 0 chapter,
+-- 1 qs, 2 ohint, 3 credits, 4 ore, 5 missiles, 8 "a save exists".
 function save_game()
- dset(0,1) dset(1,qs) dset(2,ohint and 1 or 0)
+ dset(0,CHAPTER) dset(1,qs) dset(2,ohint and 1 or 0)
  dset(3,p.credits) dset(4,p.ore) dset(5,p.mis) dset(8,1)
  hassave=true
 end
 
 function load_game()
- if dget(8)!=1 or dget(0)!=1 then return false end
+ if dget(8)!=1 or dget(0)!=CHAPTER then return false end
  qs=dget(1) ohint=dget(2)==1
  p.credits=dget(3) p.ore=dget(4) p.mis=dget(5)
+ p.x=active.x p.y=active.y+18
  return true
 end
 
--- death is a setback, not a story reset (DESIGN section 7): respawn at the last dock,
--- lose the cargo hold and a recovery fee, keep progress.
+-- death is a setback, not a story reset (DESIGN section 7): respawn at the dock, lose
+-- the cargo hold and a recovery fee, keep progress.
 function recover()
  local fee=min(p.credits,flr(p.credits*0.25))
  p.credits-=fee
  p.ore=0
  p.hp=p.mhp p.shd=p.mshd p.fuel=p.mfuel
  p.dx=0 p.dy=0 p.chg=0 p.scd=0 p.ramt=0
- if active then p.x=active.x p.y=active.y+18 else p.x=ARX p.y=ARY+80 end
+ p.x=active.x p.y=active.y+18
  msg_set("RECOVERED -"..fee.."$  CARGO LOST")
  save_game()
  state=2

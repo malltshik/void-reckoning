@@ -1,6 +1,11 @@
 import sys, math
 from collections import Counter
 
+# Writes the __gfx__ section of a chapter cart. Run from the repo root:
+#   python common/tools/gen_gfx.py chapters/ch01/ch01.p8
+# Sheet layout: sprites 0-7 player, 8-15 scout, 16-23 raider, 24-31 militia (8 angle
+# frames each; ch01 only uses player + scout - the rest are ready for later chapters),
+# 32-35 / 48-51 the two 16x16 dialogue portraits (pilot=32, rook=34).
 # ---------------------------------------------------------------------------
 # Original sprite art for Void Reckoning (hand-drawn, our own - no third party).
 # We hand-draw only the N frame; the generator derives the rest: the four
@@ -72,7 +77,7 @@ ART = {
 ORDER = ["player", "scout", "raider", "mil"]  # sprite bases 0,8,16,24
 
 # 16x16 character portraits for the dialogue screen (placed as sprite blocks;
-# the Lua side draws them with sspr - see PORT_* in src/60_dialogue.lua).
+# the Lua side draws them with sspr - see PORT in common/src/60_dialogue.lua).
 PORTRAITS = {"pilot": 32, "rook": 34}  # sprite index of the block's top-left
 P_ART = {
     # pilot 1393 - blue helmet, dark visor, white rim

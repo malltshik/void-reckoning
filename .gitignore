@@ -1,9 +1,11 @@
-# Local scratch: research/provenance carts and test harness carts.
-# Not part of the shipped repo.
+# Local scratch: research/provenance carts, screenshots, throwaway notes. Not shipped.
 tmp/
 
-# PICO-8 headless test output (written to the repo root)
+# Harness output (common/tools/p8check.py) and headless test logs
 p8log.txt
+p8shots.txt
 _o.txt
 _e.txt
 _*.p8
+chapters/*/_h/
+__pycache__/

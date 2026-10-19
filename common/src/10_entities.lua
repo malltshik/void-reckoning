@@ -8,22 +8,18 @@ FOE_CAP=4
 SPAWN_MIN=1200
 SPAWN_VAR=600
 
--- ch01 cart: only scouts spawn here (later chapters re-add raider/mil/heavy/elite)
-foes_def={
- scout={hp=25,shd=0,spd=1.0,r=4,cd=30,range=90,dmg=5,bs=2.2,bounty=15}
-}
+-- enemy stats (foes_def) and the spawn roster (FOE_POOL) are chapter content: chapters/<ch>/src/70_world.lua
+
 
 function update_flight()
  -- open the ship menu (mission / inventory) with the pause/enter key
  if btnp(6) then open_menu() return end
  if p.ramt>0 then p.ramt-=1 end
- if tut>0 then tut-=1 end
  -- X near a station docks / jumps; elsewhere X is the cannon
  if btnp(BY) then
-  local st=nearest_station(20)
+   local st=nearest_station(20)
   if st then
    p.chg=0
-   tut=0
    if st.kind=="gate" then start_jump() else dock(st) end
    return
   end
@@ -80,7 +76,8 @@ function update_flight()
  collide_all()
  update_camera()
  -- music: combat theme while enemies are engaged (with hysteresis)
- local dmin=99999
+ -- (30000 not 99999: literals past 32767 wrap negative in 16.16 fixed point)
+ local dmin=30000
  for f in all(foes) do
   local d=abs(f.x-p.x)+abs(f.y-p.y)
   if d<dmin then dmin=d end
@@ -107,7 +104,7 @@ function update_spawn()
  local x=p.x+cos(a)*dist
  local y=p.y+sin(a)*dist
  x,y=clamp_arena(x,y,24)
- spawn_foe("scout",x,y)
+ spawn_foe(FOE_POOL[1+flr(rnd(#FOE_POOL))],x,y)
 end
 
 function update_foes()
@@ -263,7 +260,6 @@ function hit_foe(j,dmg)
 end
 
 function hit_roid(j,dmg)
- dmg=dmg or 1
  local r=roids[j]
  r.hp-=dmg
  if r.hp<=0 then
@@ -282,16 +278,16 @@ function damage_player(d,why)
  else
   local r=d-p.shd
   p.shd=0
-   p.hp-=r
-   if p.hp<=0 then
-    p.hp=0
-    boom_big(p.x,p.y)
-    sfx(2,2)
-    shk=12
-    dth=why or "SHIP LOST"
-    got=180
-    state=6
-   end
+  p.hp-=r
+  if p.hp<=0 then
+   p.hp=0
+   boom_big(p.x,p.y)
+   sfx(2,2)
+   shk=12
+   dth=why
+   got=180
+   state=6
+  end
  end
 end
 

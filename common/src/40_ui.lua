@@ -66,7 +66,7 @@ function draw_title()
  print_title("void reckoning",52,7)
  if hassave then pc(BX.." continue    "..BO.." new game",100,GT)
  elseif frame%40<25 then pc(BX.." begin",100,GT) end
- print("music: gruber & krajzeg",42,120,5)
+  pc("music: gruber & krajzeg",120,5)
 end
 
 -- ship systems menu (state 8): a 3-item list + a one-entry-at-a-time carousel pane
@@ -166,7 +166,7 @@ function draw_radar()
  if arena_dist(p.x,p.y)>ARR then pc2=8 end
  rplot(cx,cy,rr,sc,p.x,p.y,pc2)
  -- compass needle: an arrow just OUTSIDE the ring pointing at the current objective
- local tgt=stations[qs>=3 and 2 or 1]
+ local tgt=objective()
  if tgt then
   local a=atan2(tgt.x-p.x,tgt.y-p.y)
   local tx=cx+cos(a)*(rr+4)
@@ -197,12 +197,4 @@ function draw_gameover()
  else
   if frame%40<25 then pc("press "..BX.." to recover",92,GT) end
  end
-end
-
-function draw_ending()
- pc("CHAPTER 1 COMPLETE",48,GT)
- pc("THE CRATE AWAITS.",64,GT)
- pc("TO BE CONTINUED",82,GT)
- if got>0 then pc("STANDBY...",106,GT)
- elseif frame%40<25 then pc("press "..BX,106,GT) end
 end

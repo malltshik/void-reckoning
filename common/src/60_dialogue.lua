@@ -1,4 +1,10 @@
 -- 60_dialogue: character portraits + a dialogue scene runner (mixed-case text)
+--
+-- The runner is engine; the scripts are chapter content (`talks`, `talkname` in
+-- chapters/<ch>/src/72_story.lua). A script is a flat list: a patch table like {w=2}
+-- switches the speaker (0 = narration, no portraits; 1 = pilot; 2 = handler/other),
+-- every string is typed out and waits for X/Z. talkname[id] overrides the right-hand
+-- speaker's name. Start one with dlg_start(id); step it with update_dlg(); draw_dlg().
 
 -- 16x16 portrait blocks in the sheet (see tools/gen_gfx.py), drawn 2x here.
 -- PORT[id] = {sheet_x, sheet_y}
@@ -6,45 +12,6 @@ PORT={ {0,16}, {16,16} }
 PORTNAME={ "pilot 1393", "handler rooke" }
 
 DY=80   -- open y of the text box
-
--- short speaker patch tables so scripts stay cheap to author (see talks below)
-local PP={w=1}
-local RR={w=2}
-local NN={w=0}   -- narration: text only, no portrait drawn
-
--- a script is a flat list: patch tables switch speaker, strings get typed out
-talks={
- intro={
-  NN,
-  "IMPERIUM CENTRAL COMMAND",
-  "COURIER 1393 - BRIEFING",
-  "ASSET: SEALED",
-  "DESTINATION: BR-11K0",
-  RR,
-  "your training campaign is over, pilot. you're ready for your first mission.",
-  "eleven thousand applicants. we chose you.",
-  "this is a top-secret delivery run. even i don't know what's in the container.",
-  "and to be honest? i don't want to know.",
-  PP,
-  "...",
-  RR,
-  "deliver it at all costs. may the imperium protect you.",
- },
- officer={
-  RR,
-  "so. an imperium courier, out here. in this system that uniform is a death sentence.",
-  "your comms are dead and your hyper-cell is shot. you are not going anywhere without one.",
-  "br-11k0? that chart's been scrubbed clean. nobody out here goes there.",
-  "the white rocks carry ore. break them, sell it here, and i will fit you a spare cell.",
-  "there's a word scratched on the wall in here. i can't read it. neither will you.",
-  "then take the jump gate and get out. i never saw you. neither did anyone else.",
-  PP,
-  "understood.",
- },
-}
-
--- per-talk speaker-name overrides (the officer reuses the second portrait's art)
-talkname={officer="outpost officer"}
 
 -- word-wrap a string, remembering each line's start offset in the source so the
 -- typewriter can reveal it without words reflowing.

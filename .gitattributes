@@ -1,0 +1,7 @@
+# Source of truth is LF everywhere (PICO-8 carts, Lua, Python, docs). Without this, a
+# Windows checkout with core.autocrlf=true rewrites line endings and edits end up with
+# mixed CRLF/LF files.
+* text=auto eol=lf
+# Binary / generated
+*.png binary
+docs/*.js -diff linguist-generated

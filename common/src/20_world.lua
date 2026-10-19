@@ -3,6 +3,7 @@
 -- solid (mineable) rocks are kept topped up: as you mine them they respawn over time
 ROID_CAP=22
 ROID_RESPAWN=150
+ROID_HP=12
 
 function spawn_roid()
  local a=rnd(1)
@@ -10,22 +11,27 @@ function spawn_roid()
  local x=ARX+cos(a)*rr
  local y=ARY+sin(a)*rr
  if hit2(x,y,p.x,p.y,30) then return end
- add(roids,{x=x,y=y,dx=(rnd(1)-0.5)*0.4,dy=(rnd(1)-0.5)*0.4,r=3+rnd(4),hp=12,c=7,solid=true})
+ add(roids,{x=x,y=y,dx=(rnd(1)-0.5)*0.4,dy=(rnd(1)-0.5)*0.4,r=3+rnd(4),hp=ROID_HP,c=7,solid=true})
 end
 
+-- build a system: the chapter authors the skeleton (ch_stations, ch_foes - see
+-- chapters/<ch>/src/70_world.lua); planets and rocks are seeded dressing around it.
+-- The RNG call order is part of the layout: do not reorder without re-checking the map.
 function load_system(id)
  srand(1000+id)
  planets={} stations={} roids={} foes={} drops={} bullets={} missiles={} parts={} blasts={} floats={}
- -- authored skeleton: chapter 1 (all inside the round arena)
- add(stations,{x=150,y=110,kind="outpost",name="OUTPOST"})
- add(stations,{x=400,y=400,kind="gate",name="JUMP GATE"})
- local n=4+flr(rnd(3))
- for i=1,n do
+ ch_stations()
+ active=stations[1] -- the dock you respawn / continue at
+ for i=1,4+flr(rnd(3)) do
   local a=rnd(1)
   local rr=rnd(1)*(ARR-50)
   local x=ARX+cos(a)*rr
   local y=ARY+sin(a)*rr
-  if abs(x-150)+abs(y-110)>60 and abs(x-400)+abs(y-400)>60 then
+  local clear=true
+  for s in all(stations) do
+   if abs(x-s.x)+abs(y-s.y)<=60 then clear=false end
+  end
+  if clear then
    add(planets,{x=x,y=y,r=10+rnd(12),c=1+flr(rnd(15))})
   end
  end
@@ -40,11 +46,9 @@ function load_system(id)
   local a=rnd(1)
   local rr=rnd(1)*(ARR-20)
   add(roids,{x=ARX+cos(a)*rr,y=ARY+sin(a)*rr,
-   dx=(rnd(1)-0.5)*0.4,dy=(rnd(1)-0.5)*0.4,r=3+rnd(4),hp=12,c=c,solid=solid})
+   dx=(rnd(1)-0.5)*0.4,dy=(rnd(1)-0.5)*0.4,r=3+rnd(4),hp=ROID_HP,c=c,solid=solid})
  end
- for i=1,2 do
-  spawn_foe("scout",300+rnd(80),300+rnd(80))
- end
+ ch_foes()
  p.x=ARX
  p.y=ARY+80
  p.dx=0
@@ -54,7 +58,6 @@ function load_system(id)
  srand(9000+id)
  ne_stars()
 end
-
 -- parallax starfield: one fixed pool, tiled with a screen-space modulo so a few
 -- stars fill the whole view. Depth `z` scales the parallax (near = fast).
 function ne_stars()
@@ -65,35 +68,25 @@ function ne_stars()
  end
 end
 
--- precompute two full byte remap tables (dim map applied once / twice) so the fade
--- can poke the screen buffer directly, 4 pixels at a time, with no per-pixel work.
-function build_fades()
- local dim={0,0,0,1,1,1,5,6,4,4,9,3,2,2,2,9}
- fadetab={}
- for pass=1,2 do
-  local map={}
-  for i=0,15 do
-   local v=dim[i+1]
-   if pass==2 then v=dim[v+1] end
-   map[i]=v
-  end
-  local t={}
-  for b=0,255 do t[b]=map[b%16]+map[flr(b/16)]*16 end
-  add(fadetab,t)
- end
-end
+-- Motion-trail fade: dim every colour on screen one step toward black (two steps on odd
+-- frames, for a dithered fade). Done by redrawing the screen onto itself through the draw
+-- palette: poke(0x5f54,0x60) makes the screen the sprite source, so one sspr remaps all
+-- 16k pixels in C. Colour 0 is transparent to sspr, which is fine - it is already black.
+DIM=split"0,0,0,1,1,1,5,6,4,4,9,3,2,2,2,9"
 
 function fade_screen()
- -- whole buffer every frame (uniform: no per-row brightness seam/shudder); the two
- -- dim tables alternate each frame for a dithered fade.
- local t=fadetab[frame%2+1]
- for i=0,8188,4 do
-  poke(24576+i,t[peek(24576+i)],t[peek(24576+i+1)],t[peek(24576+i+2)],t[peek(24576+i+3)])
+ for i=0,15 do
+  local v=DIM[i+1]
+  pal(i,frame%2<1 and v or DIM[v+1])
  end
+ poke(0x5f54,0x60)
+ sspr(0,0,128,128,0,0)
+ poke(0x5f54,0)
+ pal()
 end
 
 function draw_flight()
- if trail then fade_screen() else cls(0) end
+ fade_screen()
  for s in all(stars) do
   pset((s.x-camx)/s.z%128,(s.y-camy)/s.z%128,s.c)
  end
@@ -129,10 +122,9 @@ function draw_flight()
  draw_stations()
  draw_player()
  camera()
- local st=nearest_station(20)
- if st then pc(BX..(st.kind=="gate" and " jump" or " dock"),110,GT) end
- if tut>0 then pc("arrows fly  "..BX.." gun  "..BO.." missile",20,10) end
- -- dead space warning (past the system edge) / stranded warning (no fuel inside)
+  local st=nearest_station(20)
+  if st then pc(BX..(st.kind=="gate" and " jump" or " dock"),105,GT) end
+  -- dead space warning (past the system edge) / stranded warning (no fuel inside)
  local ad=arena_dist(p.x,p.y)
  if frame%30<20 then
   if ad>ARR then pc("dead space area",30,8)
@@ -163,7 +155,8 @@ function draw_parts()
  end
 end
 
--- sprite bases in the sheet (see tools/gen_gfx.py): 8 frames each, angle order
+-- sprite bases in the sheet (see tools/gen_gfx.py): 8 angle frames each. The sheet also
+-- holds a raider (16) and militia gunship (24) for later chapters' foes_def.spr.
 SPR_PLAYER=0
 SPR_SCOUT=8
 
@@ -189,28 +182,6 @@ end
 function draw_foes()
  for f in all(foes) do
   local a=atan2(p.x-f.x,p.y-f.y)
-  spr(SPR_SCOUT+ship_frame(a),f.x-4,f.y-4)
- end
-end
-
-function draw_stations()
- for s in all(stations) do
-  if s.kind=="outpost" then
-   rectfill(s.x-6,s.y-6,s.x+6,s.y+6,9)
-   rect(s.x-6,s.y-6,s.x+6,s.y+6,7)
-   line(s.x-6,s.y,s.x+6,s.y,7)
-   line(s.x,s.y-6,s.x,s.y+6,7)
-   local c=10
-   if frame%30<15 then c=7 end
-   circ(s.x,s.y,11,c)
-   print("OUTPOST",s.x-13,s.y-19,GT)
-  else
-   local c=10
-   if frame%30<15 then c=11 end
-   rect(s.x-4,s.y-4,s.x+4,s.y+4,c)
-   line(s.x-8,s.y,s.x+8,s.y,c)
-   line(s.x,s.y-8,s.x,s.y+8,c)
-   print("GATE",s.x-9,s.y-16,GT)
-  end
+  spr(foes_def[f.kind].spr+ship_frame(a),f.x-4,f.y-4)
  end
 end

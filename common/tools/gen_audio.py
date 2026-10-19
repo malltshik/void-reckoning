@@ -1,8 +1,11 @@
-# Audio generator for void_reckoning.p8. Run:
-#   python tools/gen_audio.py "void_reckoning.p8"
-# Gameplay SFX (ids 0-9) are original. Music phrases + patterns (ids 20+, patterns
-# 0-16) are taken verbatim from "Pico-8 Tunes Vol. 1" by Gruber & krajzeg
-# (lexaloffle bbs tid=29008), reused with attribution, as the authors invite.
+# Writes the __sfx__ and __music__ sections of a chapter cart. Run from the repo root:
+#   python common/tools/gen_audio.py chapters/ch01/ch01.p8
+# Everything outside those two sections is left untouched.
+# Gameplay SFX (ids 0-10) are original. Music phrases + patterns (sfx ids 20-34,
+# patterns 0-16) are taken verbatim from "Pico-8 Tunes Vol. 1" by Gruber & krajzeg
+# (lexaloffle bbs tid=29008), CC BY-NC-SA, reused with attribution as the authors invite.
+# The attribution must stay visible in-game (title screen) and on the web page.
+# Pattern starts used by the game: 0 = flight, 6 = combat, 10 = station (MUS_* in 00_core.lua).
 import sys
 
 def note(p,w,v,e): return "%02x%x%x%x"%(p,w,v,e)

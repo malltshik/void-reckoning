@@ -50,18 +50,28 @@ Publish it from **Settings → Pages → Deploy from a branch → `main` / `docs
 
 ```
 common/src/*.lua      shared engine   (core, font, entities, world, combat, ui, dialogue)
-common/tools/*.py     asset generators (sprites, audio, font map)
+common/tools/         p8check.py (tokens / smoke test / screenshots), shotdiff.py, asset generators
 common/font_map.hex   custom title font bytes, stored in each cart's map region
-chapters/ch01/        Chapter 1 cart + story src/ + lore.md
+chapters/ch01/        Chapter 1: cart, src/ (world, station, story), tests/, lore.md, AGENTS.md
 chapters/ch02/        Chapter 2 (lore only, in progress)
 docs/                 GitHub Pages player (index.html shell + one <chapter>.js per cart)
-AGENTS.md             dev conventions, PICO-8 gotchas, token budget
+AGENTS.md             start here when developing: workflow, architecture, PICO-8 gotchas, tooling
 DESIGN.md             full game design
 ```
 
-Each chapter is its own PICO-8 cart. Regenerate art/audio/font-map after editing the
-generators (`python common/tools/<tool>.py chapters/ch01/ch01.p8`).
+Each chapter is its own PICO-8 cart (8192-token limit each) that includes the shared engine
+plus its own content.
 
+## Development
+
+```powershell
+python common/tools/p8check.py all ch01     # token count + headless playthrough + screenshots
+powershell -ExecutionPolicy Bypass -File build_web.ps1   # re-export the web player
+```
+
+`AGENTS.md` is the hand-over document (environment, definition of done, chapter contract,
+how to start the next chapter). The generators re-create a cart's art/audio/font sections:
+`python common/tools/gen_gfx.py chapters/ch01/ch01.p8` (likewise `gen_audio.py`, `gen_fontmap.py`).
 ## Credits & license
 
 - Code, art and design: malltshik.
