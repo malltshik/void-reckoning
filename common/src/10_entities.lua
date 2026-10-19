@@ -3,10 +3,13 @@
 -- frames of holding the fire button to reach a full charge (power 1..3)
 CHGMAX=45
 
--- patrol pacing: at most this many foes at once, spawning this rarely (~20-30s)
-FOE_CAP=4
+-- patrol pacing: a whole wave of foes arrives together every ~20-30s, up to FOE_CAP alive
+-- at once. Sitting still (e.g. out of fuel) draws a crowd - keep moving or you get swarmed.
+FOE_CAP=8
 SPAWN_MIN=1200
 SPAWN_VAR=600
+WAVE_MIN=3
+WAVE_VAR=3
 
 -- enemy stats (foes_def) and the spawn roster (FOE_POOL) are chapter content: chapters/<ch>/src/70_world.lua
 
@@ -99,12 +102,16 @@ function update_spawn()
  if spawnt>0 then return end
  -- rare patrols: long gaps so you can explore, mine, and just fly in peace
  spawnt=SPAWN_MIN+flr(rnd(SPAWN_VAR))
- local a=rnd(1)
- local dist=150+rnd(60)
- local x=p.x+cos(a)*dist
- local y=p.y+sin(a)*dist
- x,y=clamp_arena(x,y,24)
- spawn_foe(FOE_POOL[1+flr(rnd(#FOE_POOL))],x,y)
+ -- a patrol of several arrives at once, spread around you
+ local n=min(WAVE_MIN+flr(rnd(WAVE_VAR)),FOE_CAP-#foes)
+ for i=1,n do
+  local a=rnd(1)
+  local dist=150+rnd(60)
+  local x=p.x+cos(a)*dist
+  local y=p.y+sin(a)*dist
+  x,y=clamp_arena(x,y,24)
+  spawn_foe(FOE_POOL[1+flr(rnd(#FOE_POOL))],x,y)
+ end
 end
 
 function update_foes()

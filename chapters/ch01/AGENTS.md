@@ -5,7 +5,7 @@ contract, PICO-8 gotchas, tooling and shared rules. This file carries only what 
 to Chapter 1**, so work on later chapters isn't burdened by it. Story canon:
 `chapters/ch01/lore.md`.
 
-- **Cart budget:** 8008 / 8192 tokens (184 free) at the 2026-10-19 handover - measure with
+- **Cart budget:** 8035 / 8192 tokens (157 free) at the 2026-10-19 handover - measure with
   `p8check tokens ch01` before and after any change. ~40k / 65k chars. Each chapter is its own
   cart with its own 8192 budget (root `AGENTS.md` section 9). Web export: ~29k chars once comments
   are stripped, ~4.7k compressed bytes under the 15,360 limit (`p8check size ch01`).
@@ -50,8 +50,9 @@ to Chapter 1**, so work on later chapters isn't burdened by it. Story canon:
 - Rocks: `ROID_CAP=22` solid rocks kept topped up (`ROID_RESPAWN=150`), `ROID_HP=12` (a charged
   shot mines fast; missiles do 12). Non-solid dark rocks are background only.
 - Foes: only `scout` (`foes_def` in `70_world.lua`; hp 25, speed 1.0, range 90, dmg 5).
-  Opening patrol of 2; reinforcements (`update_spawn`) every ~20-30 s, 150-210 px away,
-  max `FOE_CAP=4`, none in dead space.
+  Opening patrol of 2; each reinforcement wave (`update_spawn`, every ~20-30 s, 150-210 px away)
+  is a **patrol of 3-5** (`WAVE_MIN`/`WAVE_VAR` in `10_entities.lua`), up to `FOE_CAP=8` alive,
+  none in dead space.
 - Homing missile: locks the nearest foe within 200 px (Manhattan), steers its heading directly
   (lerp 0.1/frame) while speed ramps 1.5 -> 3.5 px/frame; 40 dmg to foes, 300-frame life.
   *Tuned only in the headless test (it connects); whether it feels right is a playtest call.*

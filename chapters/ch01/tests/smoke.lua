@@ -45,7 +45,7 @@ hit_foe(1,999)
 ck(#foes==0 and p.credits==c0+foes_def.scout.bounty,"a scout kill pays its bounty")
 spawnt=1
 tick(2)
-ck(#foes==1,"reinforcements arrive when the timer expires")
+ck(#foes>=WAVE_MIN and #foes<WAVE_MIN+WAVE_VAR,"reinforcements arrive as a 3-5 patrol")
 
 -- music follows the fight (regression: a wrapped 99999 literal kept combat music always on)
 foes={}

@@ -140,11 +140,12 @@ Fuel 100/100 (thrust **0.06/f**, doubled 2026-10-19) · Missiles 10/10 · Credit
   fuel 1→3 CR/unit, missiles 15→35 CR.
 - **Ch1 slice (as built):** start 40 CR; ore sells 10; scout bounty 15; **cargo cap 10**; the
   **Hyper-Cell (jump key) costs 250** (= **25 ore**, or ~**20 ore + 5 pirate kills**) so it is
-  *not* affordable on start cash — the player must salvage **and** fight. Patrols are **rare** (a
-  foe roughly every 20–30s, max 4 alive) so exploration is calm. Asteroids are solid
+  *not* affordable on start cash — the player must salvage **and** fight. Reinforcements arrive as
+  a **patrol of 3–5** every ~20–30s (max 8 alive as built): loitering is punished, so keep moving.
+  Asteroids are solid
   (`ROID_CAP=22`) and **top back up over time** (`ROID_RESPAWN=150`); missiles damage them.
   Values live in `ECO` (`chapters/ch01/src/71_station.lua`), `foes_def`/`FOE_POOL`
-  (`chapters/ch01/src/70_world.lua`) and `FOE_CAP` (`common/src/10_entities.lua`).
+  (`chapters/ch01/src/70_world.lua`) and `FOE_CAP`/`WAVE_*`/`SPAWN_*` (`common/src/10_entities.lua`).
   *(2026-10-19: cargo 3→10, ore sell 30→10, cell 150→250 — the cell must be a real grind, not a
   short hop. Station menu sells **missiles at 15 CR**; solid rocks have 12 hp so a charged shot
   mines faster.)*
@@ -265,7 +266,8 @@ negotiation portraits (start as procedural dither-silhouettes; upgrade to real a
 
 **Entity model:** flat pooled tables with swap-remove; overflow-safe distance collision (axis-guard
 before squaring — see AGENTS.md §5: 16.16 fixed point overflows past ~181px); no spatial hash.
-Soft caps as built: `FOE_CAP=4` live foes, `ROID_CAP=22` solid rocks (+ background rocks), a few
+Soft caps as built: `FOE_CAP=8` live foes (arriving as `WAVE_MIN..WAVE_MIN+WAVE_VAR-1` = 3–5 ship
+patrols), `ROID_CAP=22` solid rocks (+ background rocks), a few
 dozen projectiles/particles. Off-screen sim is not culled (the field is small).
 
 **Token budget (hard 8,192 per cart) — reality check.** The original plan was an even split across
