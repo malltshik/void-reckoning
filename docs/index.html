@@ -16,7 +16,7 @@
 
 	// bump this every time docs/*.js is re-exported - it cache-busts the cart script so GitHub
 	// Pages / the browser don't keep serving a stale export
-	var p8_cart_ver = 5;
+	var p8_cart_ver = 6;
 
 	// When pico8_state is defined, PICO-8 will set .is_paused, .sound_volume and .frame_number each frame 
 	// (used for determining button icons)
@@ -1059,8 +1059,8 @@ canvas{
 	var CH = [
 		{f:"ch01.js", n:"01", name:"Courier 1393",
 		 desc:"Mine ore, dock the outpost, buy a hyper-cell and jump out."},
-		{f:"ch02.js", n:"02", name:"Kaelus Prime",
-		 desc:"Check in at the Imperium checkpoint. Buy or bluff your way to clearance."},
+		{f:"ch02.js", n:"02", name:"XR-7PO",
+		 desc:"A stripped archive. Fight for 24 navigation fragments and slice the terminal."},
 		{f:"ch03.js", n:"03", name:"TBA", desc:"In development.", soon:true}
 	];
 	var cart = (new URLSearchParams(location.search)).get("cart") || "ch01.js";

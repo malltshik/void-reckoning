@@ -1,66 +1,83 @@
-# AGENTS.md - Chapter 2 (Kaelus Prime)
+# AGENTS.md - Chapter 2 (XR-7PO)
 
 Read the repo-root `AGENTS.md` first (engine, chapter contract, PICO-8 gotchas, tooling).
-Story canon/tone: `chapters/ch02/lore.md`.
+Story canon/tone: `chapters/ch02/lore.md` (the cart's text is authoritative).
 
-**Status: playable vertical slice, PLACEHOLDER script.** Every string in `src/72_story.lua`
-is a stand-in for the author's real Ch2 script - replace the text, keep the hooks/flow.
+**Status: playable pure-combat slice, original script.** The author's canon may still describe
+an earlier plan (Kaelus Prime, negotiation); the built chapter is XR-7PO. Negotiator engine is
+not included (no `negs`).
 
-- **Cart budget:** 8090 / 8192 tokens (102 free). It includes `common/src/50_negotiation.lua`
-  (~378 tokens); Ch1 does not. Measure with `p8check tokens ch02`.
-- **Verification:** `p8check all ch02` = tokens + smoke (scripted logic) + 13 staged screens
+- **Cart budget:** 8025 / 8192 tokens (167 free), ~41.6k chars. No `50_negotiation.lua` include
+  (~378 tokens saved). Measure with `p8check tokens ch02`.
+- **Verification:** `p8check all ch02` = tokens + smoke (35+ assertions) + 14 staged screens
   (`tmp/shots/ch02_*.png`) with a text-clipping sweep.
 
 ## Source layout
 
 ```
-chapters/ch02/ch02.p8             cart: includes (adds 50_negotiation) + gfx/label/map/sfx/music
-chapters/ch02/src/70_world.lua    CHAPTER=2, foes_def (scout), ch_stations, ch_foes, objective, draw_stations
-chapters/ch02/src/71_station.lua  docking, checkpoint services, DOCKMASTER menu item
-chapters/ch02/src/72_story.lua    talks, negs (clearance), mission/inventory, story flow, start_jump,
-                                  jlines, jump_end, ch_ambush
+chapters/ch02/ch02.p8             cart: includes (00..40, 60, then src/70-73) + gfx/label/map/sfx/music
+chapters/ch02/src/70_world.lua    CHAPTER, tunables, foes_def + FOE_POOL, ch_stations, ch_foes, objective, draw_stations
+chapters/ch02/src/71_station.lua  docking, LOCAL INDEX + SLICE TERMINAL, recover override (keeps fragments)
+chapters/ch02/src/72_story.lua    talks (arrive/hail/archive/slice), mission/inventory, story flow, start_jump, jlines, jump_end
+chapters/ch02/src/73_combat.lua   engine overrides: hit_foe / update_drops (fragments, salvage, the reaver trigger)
 chapters/ch02/tests/smoke.lua     logic playthrough      chapters/ch02/tests/shots.lua  staged screens
 ```
 
 ## Flow as built
 
-1. **Arrival** (state 1): one dialogue page (`arrive`) -> flight. `update_story` here handles only
-   `dlg` pages; add `term`/cutscene page kinds if the real script needs them.
-2. **Kaelus checkpoint** (150,110): the first dock starts `checkin` (traffic control), sets
-   `ohint=true`/`qs=1`. Services: REPAIR / REFUEL / SELL ORE + **DOCKMASTER (CLEARANCE)** while
-   `qs==1`. Docking autosaves. Same partial REPAIR/REFUEL rules as Ch1.
-3. **Clearance negotiation** (state 3, `negs.clearance`): `open` is timed (`tm=300`) and falls to
-   `bluff` if you stall. Options: **offer a bribe** (`c=100`) -> `paid` (`res=1`, `qs=2`, clean) or
-   **claim imperium property** -> `bluff` (`res=2`, `qs=2`, `ambush=true`). Both open the gate; the
-   bluff flags you. The menu entry stays until you undock, so it refuses a second try
-   ("CLEARANCE GRANTED") - smoke asserts it.
-4. **Jump gate** (400,400): `start_jump` needs `qs>=2`, then the engine warp with this chapter's
-   `jlines`; `jump_end()` calls `load("ch03")` (falls back to the title if absent).
-5. **Ambush:** undocking via `leave_station()` spends `ambush` and calls `ch_ambush()` (3 scouts).
+1. **Arrival** (state 1): `arrive` (narration + pilot) -> `hail` (scavenger picket demands the hold)
+   -> flight. There is no cutscene page; `update_story` handles only `dlg` pages.
+2. **Hunt** (`qs=1`): kill the swarm for **navigation fragments**. The radar compass points at the
+   nearest drone. Waves use the engine's `update_spawn` with Ch2's aggressive globals
+   (`FOE_CAP=10`, spawn every 5-10 s, 3-5 ships). No ore, no trade: `p.credits=0`, `p.mcargo=24`
+   and `p.ore` is the fragment count (the HUD `CG` bar fills to 24).
+3. **The reaver** (`qs<3`, 23 fragments): `update_drops` spawns one `reaver` (militia sprite, 240
+   HP + 140 shield, 3-shot salvo) and shows `THE REAVER WAKES`. Its death drops the 24th fragment.
+4. **Key complete** (`qs=3`): picking up the 24th sets the stage; the compass points at the archive.
+5. **Slice** (state 4, archive at 392,128): first dock plays `archive` (sets `ohint`); the menu has
+   **LOCAL INDEX** (fragment count) and, at `qs>=3`, **SLICE TERMINAL**. The slice dialogue ends ->
+   `qs=4`, `NAV KEY REBUILT` (refuses a second slice).
+6. **Jump** (gate at 136,392): `start_jump` needs `qs>=4`; the engine warp plays `jlines`;
+   `jump_end()` calls `load("ch03")` (falls back to the title if absent).
 
-## Negotiation schema (`common/src/50_negotiation.lua`)
+## Rules implemented as chapter overrides (why / how to change)
 
-```
-negs.id={who=2,name="...",start="node",n={
-  node={t="text",o={{t="label",to="node",c=100}},res=1,go=function() ... end,tm=150,to="timeout"}
-}}
-```
-`who` = portrait id (1 pilot, 2 other); `c` = credit cost (unaffordable options are refused);
-`go` runs on entering the node; `res` lands in the `nres` global; `tm`/`to` time the node out.
-Ending nodes have no `o`; X returns to the station. Ambush is spent by `leave_station()`.
+The engine stays generic; XR-7PO's rule differences live in `73_combat.lua` and `71_station.lua`
+(globals resolved at call time, so the later definition wins; the harness stubs by name):
 
-## Balance / cuts
+| Override | Why | Change it here |
+| --- | --- | --- |
+| `hit_foe` | kills drop a fragment until 23 (the reaver holds the last) + a 35% salvage canister; **no bounty** | `73_combat.lua` |
+| `update_drops` | fragment (2) / fuel (1,3) / missiles (4) / hull (5) pickups, and the per-frame reaver trigger | `73_combat.lua` |
+| `recover` | death **keeps the fragments** (they are the progress) and refits for free; there is no money | `71_station.lua` |
 
-- Start **40 $** (credits are not carried from Ch1 yet), `ECO` same as Ch1, scout bounty 15, so the
-  100 $ bribe takes a little mining/killing unless you carry credits later.
-- **Cut for the 8192 wall:** the labour platform (canon is carried in text for now), BUY MISSILE,
-  and the raider (scout-only roster). Re-add when the chapter has room (root AGENTS section 9).
-- The NEGOTIATION OUTCOME (`nres`) and ambush flag are **not persisted** in the save (root section 13).
+Engine features this chapter drives with **data** (not overrides): per-kind enemy volley
+`foes_def.n` (lancer/reaver fire 3 in a fan), drop colour `drop.c` (fragment blue 12, salvage
+white 7, asteroid ore keeps the blink), wave pacing via `FOE_CAP`/`SPAWN_*`/`WAVE_*` globals,
+and `p.mcargo=RELIC_GOAL` (the HUD bar). `hit_roid` is the engine's: asteroid wrecks drop `kind=1`,
+which `update_drops` reads as a fuel cell.
 
-## Tests / UI notes
+## Balance / tunables (`70_world.lua` unless noted)
 
-- The smoke missile test clears `roids`/`foes` first: this seed's layout can put a solid rock on
-  the spawn point, which would eat the missile on frame 1.
-- Negotiation panel: portraits at y10, names y44, node text y54 (4 lines), options at y92 step 8.
-  Keep option labels <= 29 chars (a selector glyph is prepended) so `shots` stays green. The timer
-  has no visible bar - it just jumps to the fallback node.
+- `RELIC_GOAL=24`; waves 3-5, `FOE_CAP=10`, spawn 300-600 frames. Interceptor: 30 HP, fast
+  (bs 3.0). Lancer: 60/30, 3-shot fan (bs 3.4). Reaver: 240/140, slow, 3-shot fan.
+- Salvage from kills: 35%; from asteroids: the engine always drops one (read as fuel).
+  Fuel cell +30, missiles +2, hull +25.
+- `p.credits=0`, no bounty, no services; death is free and keeps fragments.
+- Numbers are first-pass; **feel and difficulty are the user's call** (playtest).
+
+## UI geometry (so edits don't clip)
+
+- Station: title y8, `fragments n/24` y18 (blue 12), menu items from y26 step 11 (`LOCAL INDEX`,
+  `SLICE TERMINAL`), prompt y112. `menu_show` status text is wrapped to 2 lines at y92.
+- Flight: dock/jump prompt y105, message bar y114+, radar bottom right; drops are 5x5 squares.
+- Warp narration `jlines` are <= 31 chars; the shots sweep fails on any string off-screen.
+
+## Tests / future
+
+- Smoke covers: fragments from kills (no bounty), pickup, fuel cells, no fragments from rocks,
+  the reaver at 23, the 24th from the reaver, the 3-shot volley, the slice (and its stale-second-use
+  refusal), death keeping fragments, the locked/unlocked gate, and seed-reproducible layouts.
+- **Not done:** carrying fragments/credits between chapters; a real `.p8.png` label; audio.
+- If a later chapter needs the same drop/boss plumbing, consider adding generic engine hooks
+  (the current overrides duplicate a little engine logic by design - see root AGENTS section 4).

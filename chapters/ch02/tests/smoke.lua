@@ -6,7 +6,7 @@
 _init()
 ck(state==0 and not hassave,"boots to the title with no save")
 
--- arrival: X skips the dialogue and the terminal page
+-- arrival: two dialogue pages, then flight
 press(5)
 ck(state==1,"X on the title starts the story")
 for i=1,3000 do
@@ -15,13 +15,14 @@ for i=1,3000 do
 end
 ck(state==2,"the arrival hands over to flight")
 ck(p.hp==100 and p.fuel==100 and qs==1,"fresh ship, first quest stage")
+ck(p.mcargo==RELIC_GOAL,"the hold carries fragments, not ore")
 local k=stations[1]
 local g=stations[2]
 
--- the gate refuses to open without clearance
+-- the gate refuses to open before the nav key is rebuilt
 p.x=g.x p.y=g.y
 press(5)
-ck(state==2 and msgt>0,"gate stays locked without clearance")
+ck(state==2 and msgt>0,"gate stays locked without the nav key")
 
 -- flight, gun, missile (clear the seeded rocks/foes so the shot paths are deterministic)
 roids={} foes={}
@@ -38,99 +39,111 @@ local m0=p.mis
 press(4)
 ck(p.mis==m0-1 and #missiles>0,"Z launches a missile")
 
--- bounty pays out
-foes={}
-spawn_foe("scout",p.x+60,p.y)
+-- a kill drops a fragment and pays no bounty
+foes={} drops={}
+spawn_foe("interceptor",p.x+60,p.y)
 local c0=p.credits
 hit_foe(1,999)
-ck(#foes==0 and p.credits==c0+foes_def.scout.bounty,"a scout kill pays its bounty")
+ck(#foes==0,"a kill clears the foe")
+ck(p.credits==c0,"scavengers pay no bounty")
+local frag=nil
+for d in all(drops) do if d.kind==2 then frag=d end end
+ck(frag!=nil,"a kill drops a navigation fragment")
 
--- music follows the fight
-foes={} missiles={}
+-- flying over the fragment recovers it
+p.x=frag.x p.y=frag.y
 tick(2)
-ck(mtrack==MUS_FLIGHT,"flight music plays while no foe is near")
-spawn_foe("scout",p.x+100,p.y)
-tick(2)
-ck(mtrack==MUS_COMBAT,"combat music plays when a foe is close")
+ck(p.ore==1,"flying over a fragment recovers it")
 
--- dock at the checkpoint: control hails you, then the dockmaster holds clearance
-foes={}
-p.credits=300 p.hp=90
+-- salvage canisters restore fuel
+drops={}
+p.fuel=50
+add(drops,{x=p.x,y=p.y,kind=3,c=9})
+tick(2)
+ck(p.fuel==80,"a fuel cell refuels")
+
+-- asteroid wrecks only ever hold salvage
+roids={} drops={}
+add(roids,{x=p.x+30,y=p.y,dx=0,dy=0,r=4,hp=1,c=7,solid=true})
+p.ore=0
+hit_roid(1,99)
+local onlysal=true
+for d in all(drops) do if d.kind==2 then onlysal=false end end
+ck(onlysal,"asteroid wrecks never drop fragments")
+
+-- the reaver wakes when the archive is one fragment short
+foes={} drops={}
+p.x=ARX p.y=ARY
+p.ore=RELIC_GOAL-1
+update_drops()
+local boss=0
+for f in all(foes) do if f.kind=="reaver" then boss+=1 end end
+ck(boss==1,"the reaver wakes at 23 fragments")
+
+-- killing the reaver drops the last fragment; collecting it rebuilds the key
+drops={}
+hit_foe(1,999)
+frag=nil
+for d in all(drops) do if d.kind==2 then frag=d end end
+ck(frag!=nil,"the reaver drops the final fragment")
+p.x=frag.x p.y=frag.y
+tick(2)
+ck(p.ore==RELIC_GOAL and qs==3,"the 24th fragment rebuilds the nav key")
+
+-- a lancer's volley is a fan of bullets, not one shot
+foes={} bullets={}
+p.x=ARX p.y=ARY
+spawn_foe("lancer",p.x+40,p.y)
+foes[1].cd=0
+update_foes()
+local nb=0
+for b in all(bullets) do nb+=1 end
+ck(nb>=3,"a lancer fires a salvo of 3")
+
+-- dock: the archive speaks, then the terminal slices the nav key
+foes={} bullets={}
 p.x=k.x p.y=k.y+8
 press(5)
-ck(state==4,"X beside kaelus docks")
-ck(dg!=nil,"control hails on the first visit")
+ck(state==4,"X beside the archive docks")
+ck(dg!=nil,"the archive speaks on the first visit")
 for i=1,300 do
  if not dg then break end
  press(5)
 end
-ck(dg==nil and ohint and qs==1,"the check-in sets the mission hint")
+ck(dg==nil and ohint,"the archive sets the mission hint")
 ck(dget(8)==1,"docking saves")
-ck(#sm.items==4,"the dockmaster clearance option appears")
-
--- services still work (repair + partial refuel regression)
-p.credits=100
+ck(#sm.items>=2,"the slice option is available with the key complete")
+sm.i=2
 press(5)
-ck(p.hp==p.mhp and p.credits==100-10*ECO.repair,"repair hull")
-p.fuel=50 p.credits=10
-press(3)
+ck(dg!=nil and slicing,"choosing SLICE runs the terminal")
+for i=1,300 do
+ if not dg then break end
+ press(5)
+end
+tick(2)
+ck(qs==4,"the sliced terminal rebuilds the nav key")
+-- the option is now stale: it must refuse a second slice
+sm.sub=""
 press(5)
-ck(p.fuel==60 and p.credits==0,"a short wallet refuels only what it can afford")
-
--- negotiate: bribe the dockmaster (cost 100) -> clearance granted, no ambush
-p.credits=300
-press(3) press(3)
-ck(sm.i==4,"cursor reaches the dockmaster option")
-press(5)
-ck(state==3,"choosing the dockmaster starts a negotiation")
-ck(ng and ng.s==negs.clearance,"the clearance conversation is loaded")
-press(5)
-ck(qs==2 and p.credits==200 and nres==1,"the bribe buys clearance")
-ck(not ambush,"a clean bribe does not flag you")
-press(5)
-ck(state==4 and ng==nil,"the negotiation returns to the station")
--- the menu entry is now stale: it must refuse a second negotiation
-press(5)
-ck(state==4 and sm.sub=="CLEARANCE GRANTED","clearance cannot be bought twice")
+ck(sm.sub=="COORDINATES ALREADY LOGGED","the terminal cannot be sliced twice")
 press(4)
 ck(state==2,"Z undocks")
-ck(#foes==0,"a clean departure is quiet")
 
--- leave: the cleared gate starts the warp, which resets (no ch03 in this cart)
+-- death keeps the fragments (they are the progress, and there is no money to strip)
+p.ore=7
+recover()
+ck(p.ore==7 and state==2,"recovery keeps the fragments")
+ck(p.hp==p.mhp and p.fuel==p.mfuel,"recovery refits the ship")
+
+-- leave: the rebuilt key opens the gate
 p.x=g.x p.y=g.y
 press(5)
-ck(state==5,"X at the gate with clearance starts the warp")
+ck(state==5,"X at the gate with the key starts the warp")
 for i=1,60 do
  if state!=5 then break end
  press(5)
 end
 ck(state==0 and not hassave and dget(8)==0,"finishing the warp falls back to the title")
-
--- the hostile path: no cash, bluff -> flagged -> the patrol is waiting on undock
-_init()
-press(5)
-for i=1,3000 do
- if state!=1 then break end
- press(5)
-end
-p.credits=0
-p.x=k.x p.y=k.y+8
-press(5)
-for i=1,300 do
- if not dg then break end
- press(5)
-end
-press(3) press(3) press(3)
-press(5)
-ck(state==3,"the second negotiation starts")
-press(3) press(5)
-ck(qs==2 and nres==2 and ambush,"calling the bluff flags you but still opens the gate")
-press(5)
-ck(state==4,"the negotiation returns to the station")
-foes={}
-press(4)
-ck(state==2 and not ambush,"undocking spends the ambush flag")
-ck(#foes>=3,"the flagged patrol is waiting")
 
 -- layout varies per run but a given seed rebuilds it exactly
 local s0=SEED

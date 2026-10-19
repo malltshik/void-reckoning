@@ -7,11 +7,11 @@ __lua__
 #include ../../common/src/20_world.lua
 #include ../../common/src/30_combat.lua
 #include ../../common/src/40_ui.lua
-#include ../../common/src/50_negotiation.lua
 #include ../../common/src/60_dialogue.lua
 #include src/70_world.lua
 #include src/71_station.lua
 #include src/72_story.lua
+#include src/73_combat.lua
 __gfx__
 0bb00000000000bb000bb000bb00000000000bb000bb0000000bb0000000bb000080000000000000000000000000000000000800008000000000000000000800
 00bb000000000bbb000bb000bbb000000000bb0000bb0bb0b00bb00b0bb0bb000008000000000800000880000080000000008000008000000000000000000800

@@ -7,11 +7,11 @@ system, and negotiation when you dock. Dark sci-fi tone.
 **▶ Play in your browser:** <https://malltshik.github.io/void-reckoning/>
 
 **Status:** **Chapter 1** is a complete vertical slice — mine ore, dock at the outpost,
-sell, buy a hyper-cell, jump out. **Chapter 2** is a playable preview at Kaelus Prime: check in,
-then talk, bribe or bluff your way to clearance at the dockmaster's desk (the first
-**negotiation** scene). Its story text is a placeholder while the real script is written.
-Chapters 3–10 are not built. Chapters chain in the multicart bundle
-(`docs/game.html`); the per-chapter pages stay for preview.
+sell, buy a hyper-cell, jump out. **Chapter 2** (XR-7PO) is a playable **combat** slice: a stripped
+Imperium archive overrun by scavengers — fight the swarm for **24 navigation fragments**, kill the
+**reaver**, then dock and slice the archive's terminal to rebuild your nav key. No ore and no trade:
+salvage enemy wrecks for fuel, missiles and hull. Chapters 3–10 are not built. Chapters chain in the
+multicart bundle (`docs/game.html`); the per-chapter pages stay for preview.
 
 Progress autosaves on dock, on jump and on quit; the title offers **continue / new game**.
 Dying respawns you at the last dock for a 25% fee and your cargo — the story never resets.
@@ -61,7 +61,7 @@ common/src/*.lua      shared engine   (core, font, entities, world, combat, ui, 
 common/tools/         p8check.py (tokens / smoke / screenshots / web export + bundle), shotdiff.py, generators
 common/font_map.hex   custom title font bytes, stored in each cart's map region
 chapters/ch01/        Chapter 1: cart, src/ (world, station, story), tests/, lore.md, AGENTS.md
-chapters/ch02/        Chapter 2 (Kaelus Prime): same layout; first negotiation scene
+chapters/ch02/        Chapter 2 (XR-7PO): same layout, plus 73_combat.lua rule overrides
 docs/                 GitHub Pages player (index.html shell, <chapter>.js per cart, game.html bundle)
 AGENTS.md             start here when developing: workflow, architecture, PICO-8 gotchas, tooling
 DESIGN.md             full game design

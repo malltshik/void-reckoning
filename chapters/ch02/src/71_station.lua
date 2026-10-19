@@ -1,6 +1,5 @@
--- 71_station: Chapter 2 docking, checkpoint services, the clearance negotiation.
-
-ECO={oresell=10,cell=250,repair=2,fuel=1,missile=15}
+-- 71_station: Chapter 2 docking. XR-7PO has no trade - the hold carries fragments, so the
+-- only service here is slicing the archive's dead terminal to rebuild the navigation key.
 
 function nearest_station(range)
  for s in all(stations) do
@@ -12,66 +11,62 @@ end
 function dock(s)
  active=s
  local items={
-  {label="REPAIR HULL ("..ECO.repair.."$/HP)",act=function(m)
-   local need=ceil(p.mhp-p.hp)
-   if need<=0 then m.sub="HULL AT MAXIMUM" return end
-   local units=min(need,flr(p.credits/ECO.repair))
-   if units<=0 then m.sub="NOT ENOUGH $" return end
-   p.credits-=units*ECO.repair
-   p.hp=min(p.mhp,p.hp+units)
-   m.sub="+"..units.." HP -"..units*ECO.repair.."$"
-  end},
-  {label="REFUEL ("..ECO.fuel.."$/UNIT)",act=function(m)
-   local need=ceil(p.mfuel-p.fuel)
-   if need<=0 then m.sub="FUEL FULL" return end
-   local units=min(need,flr(p.credits/ECO.fuel))
-   if units<=0 then m.sub="NOT ENOUGH $" return end
-   p.credits-=units*ECO.fuel
-   p.fuel=min(p.mfuel,p.fuel+units)
-   m.sub="+"..units.." FUEL -"..units*ECO.fuel.."$"
-  end},
-  {label="SELL ORE ("..ECO.oresell.."$ EACH)",act=function(m)
-   if p.ore<=0 then m.sub="NO ORE TO SELL" return end
-   local g=p.ore*ECO.oresell
-   p.credits+=g
-   p.ore=0
-   m.sub="SOLD ORE +"..g.."$"
+  {label="LOCAL INDEX",act=function(m)
+   m.sub=p.ore.." of "..RELIC_GOAL.." fragments recovered."
   end}
  }
- -- the checkpoint's dockmaster holds the gate clearance (the chapter's negotiation)
- if s.kind=="kaelus" and qs==1 then
-  add(items,{label="DOCKMASTER (CLEARANCE)",act=function(m)
-   if qs>=2 then m.sub="CLEARANCE GRANTED" return end
-   neg_start("clearance")
+ -- once all fragments are aboard, the terminal can be read
+ if qs>=3 then
+  add(items,{label="SLICE TERMINAL",act=function(m)
+   if qs>=4 then m.sub="COORDINATES ALREADY LOGGED" return end
+   slicing=true
+   dlg_start("slice")
   end})
  end
- sm=menu_new(s.kind=="kaelus" and "KAELUS CHECKPOINT" or "KAELUS SERVICES",items)
+ sm=menu_new("XR-7PO ARCHIVE",items)
  sfx(6,3)
  set_music(MUS_STATION)
  state=4
- -- first dock: traffic control explains you are flagged for inspection
- if s.kind=="kaelus" and not ohint then
+ -- first dock: the archive explains what it lost
+ if not ohint then
   ohint=true
-  qs=1
-  dlg_start("checkin")
+  dlg_start("archive")
  end
  save_game()
 end
 
 function update_station()
- -- the check-in briefing plays over the menu, then hands control back to it
- if dg then update_dlg() return end
+ -- the archive's briefing plays over the menu; finishing the slice sets the key
+ if dg then
+  update_dlg()
+  if dg==nil and slicing then
+   slicing=nil
+   qs=4
+   msg_set("NAV KEY REBUILT - GATE UNLOCKED")
+   save_game()
+  end
+  return
+ end
  menu_tick(sm)
- if btnp(BN) then leave_station() end
+ if btnp(BN) then state=2 end
 end
 
 function draw_station()
  rectfill(6,6,121,121,1)
  rect(6,6,121,121,GT)
  if dg then draw_dlg() return end
- print("$"..p.credits,10,18,10)
- print("hull "..flr(p.hp).."/"..p.mhp,34,18,GT)
- print("fuel "..flr(p.fuel),84,18,GT)
+ print("fragments "..p.ore.."/"..RELIC_GOAL,10,18,12)
  menu_show(sm)
  pc(BX.." select  "..BO.." undock",112,GT)
+end
+
+-- death keeps the fragments: they ARE the progress here, so the engine's default recover
+-- (which wipes p.ore) is wrong for XR-7PO. There is no money, so no recovery fee either.
+function recover()
+ p.hp=p.mhp p.shd=p.mshd p.fuel=p.mfuel
+ p.dx=0 p.dy=0 p.chg=0 p.scd=0 p.ramt=0
+ p.x=active.x p.y=active.y+18
+ msg_set("RECOVERED - FRAGMENTS INTACT")
+ save_game()
+ state=2
 end

@@ -107,8 +107,8 @@ function draw_flight()
   end
  end
  for o in all(drops) do
-  local c=10
-  if frame%20<10 then c=11 end
+  -- a chapter may colour a drop via o.c (relic vs salvage); ore keeps the old blink
+  local c=o.c or (frame%20<10 and 11 or 10)
   rectfill(o.x-2,o.y-2,o.x+2,o.y+2,c)
  end
  draw_parts()

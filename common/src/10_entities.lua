@@ -140,7 +140,11 @@ function update_foes()
   f.cd-=1
   if f.cd<=0 and adx<d.range and ady<d.range then
    f.cd=d.cd
-   spawn_bullet(f.x+cos(a)*5,f.y+sin(a)*5,a,d.bs,d.dmg,1)
+   -- per-kind volley: foes_def.n bullets in a small fan (default 1 = the classic shot)
+   local n=d.n or 1
+   for k=1,n do
+    spawn_bullet(f.x+cos(a)*5,f.y+sin(a)*5,a+(k-(n+1)/2)*0.1,d.bs,d.dmg,1)
+   end
   end
  end
 end

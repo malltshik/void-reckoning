@@ -28,11 +28,15 @@ chapter** (Ch1-10), one cart per chapter, no pre-declared parts. Story milestone
 twist (the sealed cargo is empty), **Ch6** the fork (defect or die loyal), **Ch10** the Paragon.
 
 **Status:** Chapter 1 is a complete, playable vertical slice (intro -> mine -> dock -> buy
-hyper-cell -> jump -> warp finale, with save/continue and death-respawn). Chapters 2-10 and the
-docked negotiation layer are not built (Ch2 has a lore stub only).
+hyper-cell -> jump -> warp finale, with save/continue and death-respawn). Chapter 2 is a
+playable **combat** slice (XR-7PO: warp-in -> scavenger picket -> collect **24 navigation
+fragments** from kills -> the reaver boss -> slice the archive terminal -> jump). The docked
+negotiation layer (state 3) is built but currently unused by any chapter. Chapters 3-10 are
+not built.
 
 Doc map: `README.md` (public face) - `DESIGN.md` (full design + as-built numbers) -
-this file (how to work) - `chapters/ch01/AGENTS.md` (Ch1 as built) - `chapters/*/lore.md`.
+this file (how to work) - `chapters/ch01/AGENTS.md`, `chapters/ch02/AGENTS.md` (as built) -
+`chapters/*/lore.md`.
 
 ## 2. Environment
 
@@ -103,12 +107,19 @@ to **both**): `0` title - `1` story/cutscene - `2` flight - `3` negotiation - `4
 
 | Group | Names |
 | --- | --- |
-| Constants / data | `CHAPTER` (number; seeds the layout, tags the save), `foes_def` (per kind: `hp shd spd r cd range dmg bs bounty spr`), `FOE_POOL` (kinds reinforcements draw from), `talks` + `talkname` (dialogue scripts), `negs` (optional negotiation scripts - needs state 3) |
+| Constants / data | `CHAPTER` (number; seeds the layout, tags the save), `foes_def` (per kind: `hp shd spd r cd range dmg bs n bounty spr`; `n` = bullets per volley, default 1, so a "salvo" is pure data), `FOE_POOL` (kinds reinforcements draw from), `talks` + `talkname` (dialogue scripts), `negs` (optional negotiation scripts - needs state 3) |
 | World hooks | `ch_stations()` (adds authored stations; first one is the respawn/continue dock), `ch_foes()` (opening patrol; called last so seeded RNG order stays stable), `objective()` (radar compass target), `draw_stations()` |
 | Station (state 4) | `nearest_station(range)`, `dock(s)`, `update_station()`, `draw_station()` |
 | Story (state 1) | `init_story()`, `start_story()`, `update_story()`, `draw_story()`, `mission_lines()`, `inventory_lines()` |
 | Jump / warp (5) | `start_jump()`, `jlines` (narration beats, <=31 chars) + `jump_end()` (title, or `load("chNN")` chain). The warp animation itself is engine (`update_jump`/`draw_jump` in `40_ui`). |
 | Engine-owned story globals the chapter may use | `qs` (quest stage), `ohint` (mission hint unlocked) - both persisted by `save_game` |
+
+A chapter may also **override** engine sim functions by redefining them (they are globals,
+resolved at call time, and the harness stubs by name) when its *rules* differ - e.g. Ch2
+redefines `hit_foe` / `update_drops` / `recover` so kills drop navigation fragments (never
+bounty) and death keeps them. That is the established escape hatch when a generic engine hook
+would not pay its way (section 9); prefer data (`foes_def.n`, `load_system` globals,
+`drops` entries `{x y kind c}`) and hooks first, override only real rule differences.
 
 **Key globals:** `p` (player), `foes roids drops bullets missiles parts blasts floats planets
 stations` (flat pools), `active` (respawn dock), `qs ohint`, `sm` (station menu) `mm` (ship
@@ -181,6 +192,11 @@ DO
 - When you compact code, grep for `spr(` / `sspr(` in what you touched - a refactor once deleted
   the ship from two cutscenes while leaving the comments that described it.
 - Add a test for every bug you fix (`tests/smoke.lua` assertions are cheap).
+- Keep chapter-specific behavior **data or overrides**: enemy salvos are `foes_def.n`, drop
+  colours are `drop.c` (`drops` entries `{x y kind c}`), wave pacing is the `FOE_CAP/SPAWN_*/
+  WAVE_*` globals, and a genuine rule change is a chapter redefinition of the engine sim
+  function (section 4). Only add an engine hook/feature when data cannot express it and it pays
+  back in every chapter.
 
 DON'T
 - Don't use `pcall`/`goto`, radians, or string methods. Don't wrap `+=` statements across lines.
@@ -258,17 +274,17 @@ Each chapter cart has its **own** 8192 tokens, but the engine is included in eve
 engine tokens are paid N times: **trimming `common/` is the best investment**, and engine
 additions must be justified. Current figure per chapter is in its own `AGENTS.md`.
 
-Current figures (2026-10-19): **Ch1 = 8156 / 8192 (36 free)**, **Ch2 = 8090 / 8192 (102 free)**.
+Current figures (2026-10-19): **Ch1 = 8182 / 8192 (10 free)**, **Ch2 = 8025 / 8192 (167 free)**.
 The shared engine is ~6.3k, so a chapter gets only ~1.5-1.8k for its own content.
-`50_negotiation.lua` is ~378 tokens and is included only by chapters that use `negs` (Ch1 omits
-it, so Ch1 pays nothing for the second pillar). Ch2 fit by cutting the labour platform, BUY
-MISSILE and the raider from the first draft - see `chapters/ch02/AGENTS.md`. A boss / advanced
-negotiation features still need engine trims or unused subsystems left out of a chapter's
-`#include` list (DESIGN section 13). If you are out of room: measure first (`p8check tokens`),
-then look for duplicated helpers (`wrap` vs `wrap_off`), one-use locals, and defaults for params
-every caller passes. Features already cut for budget (re-add only if there is room): second enemy (raider),
-charge meter, dead-space scan objective, hit flash, low-HP/fuel HUD blink, one-time control hint,
-station art. In-editor, the `info` command prints code/token/compressed sizes.
+`50_negotiation.lua` is ~378 tokens and is included only by chapters that use `negs` (no chapter
+does now, so nobody pays for the second pillar). The engine grew ~26 tokens for the per-kind
+enemy salvo (`foes_def.n`) and the drop-colour field (`drop.c`) - Ch1 has only 10 free, so the
+**next engine addition will need a trim first** (candidates below). Ch2 fit by implementing its
+rules as chapter overrides instead of engine features. If you are out of room: measure first
+(`p8check tokens`), then look for duplicated helpers (`wrap` vs `wrap_off`), one-use locals, and
+defaults for params every caller passes. Features still cut for budget (re-add only if there is
+room): extra Ch1 enemy (raider), charge meter, dead-space scan objective, hit flash, low-HP/fuel
+HUD blink, one-time control hint. In-editor, the `info` command prints code/token/compressed sizes.
 
 ## 10. Assets pipeline
 
@@ -341,18 +357,18 @@ starting a chapter, copy the previous cart so the label and data come along.
 
 ## 13. Known gaps & backlog (as of the 2026-10-19 handover)
 
-- **Built:** the docked negotiation layer (state 3, `common/src/50_negotiation.lua`), Ch2 (a Kaelus
-  Prime vertical slice with a **placeholder script** - see `chapters/ch02/AGENTS.md`), and the
-  multicart bundle (`p8check bundle` -> `docs/game.html`/`game.js`).
+- **Built:** the docked negotiation layer (state 3, `common/src/50_negotiation.lua` - now unused
+  by any chapter), Ch2 (XR-7PO, a pure-combat slice with original text - see
+  `chapters/ch02/AGENTS.md`), and the multicart bundle (`p8check bundle` ->
+  `docs/game.html`/`game.js`).
 - **Not built:** Ch3-10, upgrade tiers (DESIGN section 8), the Paragon boss, a real `.p8.png`
   release label per chapter, `game.bin` for Steam.
 - **Known gaps in the new systems:** a negotiation's `nres`/ambush flag are not persisted (a reload
-  loses the pending ambush); credits/upgrades are not carried between chapters; the `load()` chain
-  only actually swaps carts in the exported bundle.
-- **Cut from Ch2 for the 8192-token wall:** the labour platform, BUY MISSILE and the raider - see
-  `chapters/ch02/AGENTS.md`. Ch1 has 36 free: second enemy (raider; sprites already in the sheet),
-  charge meter, hit flash, low-HP/fuel HUD blink, one-time control hint, dead-space scan side
-  objective are still re-addable.
+  loses the pending ambush) - moot until a chapter uses `negs` again; credits/upgrades are not
+  carried between chapters; the `load()` chain only actually swaps carts in the exported bundle.
+- **Cut from Ch2 for the 8192-token wall:** nothing - it sits at 167 free. Ch1 has 10 free:
+  second enemy (raider; sprites already in the sheet), charge meter, hit flash, low-HP/fuel HUD
+  blink, one-time control hint, dead-space scan side objective are still re-addable.
 - **Possible engine trims** (each pays back in every chapter): merge `wrap`/`wrap_off`
   (`00_core` / `60_dialogue`; note `wrap("")` returns one empty line, which `draw_term` relies on
   for cursor placement), shrink the `lc()` print wrapper, generalise `draw_stations`.
@@ -361,6 +377,13 @@ starting a chapter, copy the previous cart so the label and data come along.
   chaining hooks are in.
 ## 14. Changelog (brief - full detail is in git)
 
+- [2026-10-19] **Chapter 2 rebuilt as XR-7PO (original script).** Pure combat: warp-in ->
+  scavenger picket hail -> collect **24 navigation fragments** from kills -> the **reaver** boss
+  (spawns at 23) drops the last -> dock the archive and **slice its terminal** -> gate. No ore or
+  trade; wrecks drop fuel/missile/hull salvage; fragments survive death. Implemented as ch02
+  overrides (`hit_foe`/`update_drops`/`recover`) so the engine stays lean - the only engine
+  changes are a data-driven enemy volley (`foes_def.n`) and drop colours (`drop.c`), both
+  behaviour-identical for Ch1. **Ch2 = 8025/8192 (167 free)**; Ch1 = 8182 (10 free).
 - [2026-10-19] **Multicart extras flattened (bugfix).** PICO-8 resolves an extra cart's `#include`s
   against the **main** cart's folder, so the bundle's ch02 was silently compiling Ch1's chapter
   code. `p8check.py bundle` now inlines includes (`flatten_includes`) before exporting; verified

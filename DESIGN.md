@@ -5,7 +5,7 @@
 > Cold, dark, and explicit about what an empire costs.
 
 **Status:** design locked (post-grilling). Built and released **chapter by chapter** (Ch1–10).
-**Story canon:** per-chapter `chapters/<ch>/lore.md` (Ch1 written, Ch2 WIP). It holds the story, world, and characters as prose/canon — **not** verbatim script; the cart's on-screen text is authoritative. Align narrative work to it.
+**Story canon:** per-chapter `chapters/<ch>/lore.md` (Ch1 written; Ch2 source text written, canon WIP). It holds the story, world, and characters as prose/canon — **not** verbatim script; the cart's on-screen text is authoritative. Align narrative work to it.
 
 ---
 
@@ -119,8 +119,9 @@ without `negs` pays nothing). Data: `negs.id={who=2,name="...",start="node",n={.
 `{t=text,o={{t=label,to=node,c=cost}},res=outcome,go=fn,tm=frames,to=timeoutNode}`. Up to three
 options, credit-cost leverage (`c`), timed fallback, an outcome code and an on-enter hook.
 Consequences are physical through the `ambush` flag: `leave_station()` spends it on undock and calls
-the chapter's `ch_ambush()`. Ch2's dockmaster clearance is the first user. Still future: reputation/
-intel/disposition gating, and persisting the outcome/ambush across a save.
+the chapter's `ch_ambush()`. No chapter currently uses `negs` (Ch2 had a dockmaster clearance in its
+placeholder slice; the built XR-7PO chapter is pure combat), so the subsystem is dormant but ready.
+Still future: reputation/intel/disposition gating, and persisting the outcome/ambush across a save.
 
 ---
 
@@ -211,7 +212,7 @@ militia (24) already exist in the sheet.
 | Ch | System (working name) | Role | Beat |
 | :-- | :-- | :-- | :-- |
 | **1** | Vector-Alpha | Thaw | Wake adrift post-wormhole; ship AI restates the mission. Tutorial: fly, salvage fuel, first skirmish, dock. Nav data corrupted → hop toward the relay. |
-| **2** | Kaelus Prime | The Imperium's face | Check in as a courier; they're shocked you live. Run a job for clearance + gate key. First negotiation set-piece; first glimpse of casual cruelty (labor crews, a "reassignment" = death sentence). |
+| **2** | XR-7PO | The archive's dead face | A stripped Imperium archive. Scavenger picket hails you; kill the swarm for **24 navigation fragments** (the hold carries keys, not ore), the **reaver** wakes at 23 and holds the last, then dock the archive and **slice its terminal** to rebuild the nav key. Pure-combat chapter: no trade, salvage from wrecks. |
 | **3** | Oort-Novex | **Twist 1** | After the objective, a quiet beat: break protocol, open the crate — **empty**. A Resistance agent hails you (the demo's big negotiation). You chase the truth; agent gives **BR-11K0**'s true coordinates with a warning. |
 | **4** | Helios-9 | Doubt | Radiation frontier; the Imperium's orders turn dirty. Witness the machine up close. |
 | **5** | BR-11K0 | **Twist 2** | Reach the dead world: its entire population was exterminated centuries ago to "combat bio-social contamination." You realize *you* are contamination. |
@@ -273,21 +274,22 @@ negotiation portraits (start as procedural dither-silhouettes; upgrade to real a
 
 ## 13. Technical architecture
 
-**States:** `0 Title · 1 Prologue/Cutscene · 2 Flight · 3 Comms/negotiation (built 2026-10-19,
-Ch2 first user) · 4 Station · 5 Jump/Route · 6 Game Over · 7 (reserved, unbuilt) · 8 Ship menu`.
+**States:** `0 Title · 1 Prologue/Cutscene · 2 Flight · 3 Comms/negotiation (built 2026-10-19;
+no chapter uses it yet) · 4 Station · 5 Jump/Route · 6 Game Over · 7 (reserved, unbuilt) · 8 Ship menu`.
 
 **Entity model:** flat pooled tables with swap-remove; overflow-safe distance collision (axis-guard
 before squaring — see AGENTS.md §5: 16.16 fixed point overflows past ~181px); no spatial hash.
-Soft caps as built: `FOE_CAP=8` live foes (arriving as `WAVE_MIN..WAVE_MIN+WAVE_VAR-1` = 3–5 ship
-patrols), `ROID_CAP=22` solid rocks (+ background rocks), a few
+Soft caps as built: `FOE_CAP=8` live foes in Ch1 (Ch2 raises it to 10, arriving as
+`WAVE_MIN..WAVE_MIN+WAVE_VAR-1` = 3–5 ship patrols), `ROID_CAP=22` solid rocks (+ background rocks), a few
 dozen projectiles/particles. Off-screen sim is not culled (the field is small).
 
 **Token budget (hard 8,192 per cart) — reality check.** The original plan was an even split across
 systems (flight 450, enemy AI 900, negotiation 700, boss 700, …). As built (2026-10-19), the shared
 engine (`common/src`) is **~6.3k tokens** and every chapter cart pays it again, leaving ~1.5–1.8k for
-chapter content. Measured: **Ch1 = 8,156 / 8,192 (36 free)**, **Ch2 = 8,090 / 8,192 (102 free)**.
+chapter content. Measured: **Ch1 = 8,182 / 8,192 (10 free)**, **Ch2 = 8,025 / 8,192 (167 free)**.
 The negotiation engine is `common/src/50_negotiation.lua` at **~378 tokens**, and it is *optional* -
-only chapters that define `negs` include it (Ch1 omits it and pays nothing for the second pillar).
+only chapters that define `negs` include it (neither current chapter does, so neither pays for the
+second pillar; Ch2 instead redefines the engine's `hit_foe`/`update_drops`/`recover` for its rules).
 
 Consequences for planning: a **boss (~700)** and fancier negotiation features still do not fit next
 to the current engine without trimming it, so (a) every engine token saved is paid back in all ten
@@ -313,7 +315,7 @@ chapters/ch01/src/70_world.lua    # stations/foes hooks, enemy roster, station d
 chapters/ch01/src/71_station.lua  # dock services, economy
 chapters/ch01/src/72_story.lua    # dialogue scripts, quests, cutscenes, jump_end + warp text
 chapters/ch01/tests/              # smoke.lua + shots.lua drivers for p8check
-chapters/ch02/                    # Kaelus Prime slice (world/station/story + negotiation script)
+chapters/ch02/                    # XR-7PO combat slice (world/station/story + 73_combat rule overrides)
 docs/  build_web.ps1              # Pages player: index.html shell + <ch>.js per cart
 tmp/                              # gitignored local scratch (research, screenshots)
 DESIGN.md  AGENTS.md  chapters/<ch>/lore.md  chapters/<ch>/AGENTS.md

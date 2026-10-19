@@ -1,68 +1,85 @@
--- 72_story: Chapter 2 story - arrival at Kaelus Prime, check-in, the dockmaster
--- clearance negotiation, and the warp out.
---
--- *** PLACEHOLDER SCRIPT ***  Every string below is a stand-in: the author's real Ch2
--- script replaces it. Kept short so the shots clipping sweep stays green.
--- Canon/tone live in chapters/ch02/lore.md.
+-- 72_story: Chapter 2 story - XR-7PO. Arrival and the scavenger picket's hail, the
+-- archive's request, the terminal slice, and the warp out. Tone/canon: chapters/ch02/lore.md.
 
--- speaker patch tables: PP = pilot, NN = narration (no portrait)
+-- speaker patch tables: PP = pilot, RR = the other voice, NN = narration (no portrait)
 local PP={w=1}
+local RR={w=2}
 local NN={w=0}
 
 talks={
  arrive={
   NN,
-  "KAELUS PRIME",
-  "IMPERIUM CORE APPROACH",
+  "XR-7PO",
+  "IMPERIUM ARCHIVE - SEALED",
+  "STATUS: STRIPPED, 400 CYCLES",
   PP,
-  "the wormhole cast me out light-years off course.",
-  "kaelus prime. the imperium's own face.",
-  "traffic control is hailing me.",
+  "the wormhole cast me out at the dead edge of the chart.",
+  "xr-7po. an archive the imperium sealed and then forgot.",
+  "someone did not forget it. the wreckage out here is fresh.",
  },
- checkin={
+ hail={
+  RR,
+  "unregistered vessel. this system is claimed.",
+  "dump your hold and your core, and the swarm lets you drift.",
   PP,
-  "courier 1393, sealed cargo, requesting clearance.",
+  "...",
+  RR,
+  "no answer. good. the screen was getting bored.",
+ },
+ archive={
   NN,
-  "TRAFFIC CONTROL",
-  "courier 1393. you were logged destroyed six cycles ago.",
-  "nobody passes kaelus unflagged. the dockmaster will see you.",
- }
+  "XR-7PO ARCHIVE",
+  "TERMINAL: STILL RUNNING",
+  RR,
+  "the terminal speaks with a voice that has not been alive for a long time.",
+  "it kept direction keys for a road it can no longer see.",
+  "the scavengers tore twenty-four of them out. they wear them as trophies.",
+  "bring the fragments back and i will remember where you are going.",
+  PP,
+  "and the scavengers?",
+  RR,
+  "they will send their reaver. they always do.",
+ },
+ slice={
+  NN,
+  "> inserting 24 fragments",
+  NN,
+  "> reassembling navigation key",
+  NN,
+  "> the archive remembers",
+  RR,
+  "there. a road, and a name at the end of it.",
+  "the gate will hear you now. go, before the swarm wakes.",
+ },
 }
-talkname={checkin="kaelus control"}
-
--- the chapter's negotiation set-piece (runtime: common/src/50_negotiation.lua).
--- A bribe buys clearance cleanly; a bluff without proof gets you flagged (ambush on undock).
-negs={
- clearance={who=2,name="dockmaster",start="open",n={
-  open={t="so the ghost courier walks in. sealed crate, no manifest. give me one reason i don't space you.",tm=300,to="bluff",o={
-    {t="offer a bribe (100$)",c=100,to="paid"},
-   {t="claim imperium property",to="bluff"},
-  }},
-  paid={t="credits and no questions. stamped. the gate is yours.",res=1,go=function() qs=2 end},
-  bluff={t="he laughs. 'no seal, no title.' a klaxon starts. 'detain this one.'",res=2,go=function() qs=2 ambush=true end},
- }}
-}
+talkname={hail="scavenger picket",archive="archive terminal",slice="archive terminal"}
 
 function mission_lines()
- if qs<2 then return {"[main] buy or bluff your way to gate clearance.",
-   "[side] mine ore and sell it.","[side] destroy pirates for bounty."} end
- return {"[main] fly to the jump gate and jump."}
+ if qs<3 then return {"[main] recover the navigation fragments ("..p.ore.."/"..RELIC_GOAL..").",
+   "[side] salvage wrecks for fuel, missiles and hull."} end
+ if qs==3 then return {"[main] dock the archive and slice its terminal."} end
+ return {"[main] fly to the gate and jump."}
 end
 
 function inventory_lines()
- return {"$"..p.credits,
-  "ore "..p.ore.." / "..p.mcargo,
+ return {"fragments "..p.ore.." / "..RELIC_GOAL,
   "missiles "..p.mis.." / "..p.mmis,
-  qs>=2 and "clearance: granted" or "clearance: none"}
+  "hull "..flr(p.hp).." / "..p.mhp,
+  "fuel "..flr(p.fuel).." / "..p.mfuel,
+  "cargo: sealed (br-11k0)"}
 end
 
 function init_story()
  qs=1
  ohint=false
+ slicing=nil
+ bossq=0
  spg=1
  spt=0
  dg=nil
- spages={{kind="dlg",id="arrive"}}
+ p.credits=0
+ p.mcargo=RELIC_GOAL
+ spages={{kind="dlg",id="arrive"},{kind="dlg",id="hail"}}
 end
 
 function start_story()
@@ -71,8 +88,9 @@ function start_story()
 end
 
 function update_story()
+ local pg=spages[spg]
  spt+=1
- if spt==1 then dlg_start(spages[spg].id) end
+ if spt==1 then dlg_start(pg.id) end
  update_dlg()
  if dg==nil then next_spage() end
 end
@@ -82,8 +100,8 @@ function draw_story()
 end
 
 function start_jump()
- if qs<2 then
-  msg_set("CHECKPOINT - CLEARANCE REQUIRED")
+ if qs<4 then
+  msg_set("GATE LOCKED - NAV KEY INCOMPLETE")
   return
  end
  state=5
@@ -91,22 +109,16 @@ function start_jump()
  sfx(7,3)
 end
 
--- warp out of Kaelus. Keep every line <= 31 chars (shots clipping sweep).
+-- warp out of XR-7PO. Keep every line <= 31 chars (shots clipping sweep).
 jlines={
- "kaelus fills the rear view.",
- "the core draws closer now.",
- "i was meant to be a ghost.",
- "whatever is in this crate,",
- "they will kill to keep.",
+ "xr-7po goes dark behind you.",
+ "a dead archive, stripped bare.",
+ "the crate never opened.",
+ "ahead: a road, and a name.",
+ "(to be continued...)",
 }
 
 -- end of chapter: hand off to ch03 in a multicart; a lone cart falls back to the title
 function jump_end()
  if load("ch03")==false then reset_game() end
-end
-
--- the dockmaster's flag: a patrol is waiting the moment you leave the dock
-function ch_ambush()
- for i=1,3 do spawn_foe("scout",p.x+rnd(140)-70,p.y+rnd(140)-70) end
- msg_set("FLAGGED - PATROL INBOUND")
 end
