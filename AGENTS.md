@@ -282,7 +282,10 @@ starting a chapter, copy the previous cart so the label and data come along.
 `<chapter>.js` per cart, loaded via `?cart=<chapter>.js` (default `ch01.js`).
 - Regenerate with `powershell -ExecutionPolicy Bypass -File build_web.ps1` and **commit** `docs/*.js`.
   The export embeds the proprietary PICO-8 runtime, so it **cannot run in CI** - local only.
-  Pages deploys from branch `main` / `/docs` on every push.
+- Deploy is `.github/workflows/pages.yml`: it uploads the committed `docs/` folder and deploys via
+  the Pages Actions (no PICO-8 needed at deploy time). The repo's Pages **Source must be "GitHub
+  Actions"** (Settings > Pages). It replaced a branch `main`/`/docs` source, which silently stopped
+  publishing (stuck at an old commit while pushes kept landing; branches also throttle ~10 builds/h).
 - After a re-export, **bump `p8_cart_ver`** in `docs/index.html` (near the top): the shell appends
   `?v=<n>` to the cart `<script>`, so GitHub Pages / the browser don't keep serving a stale
   `docs/*.js` (Pages caches everything for ~10 min otherwise).
