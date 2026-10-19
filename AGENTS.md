@@ -296,7 +296,8 @@ starting a chapter, copy the previous cart so the label and data come along.
   ("code block too large" = compressed code > 15,360 bytes) instead of shipping a stale file.
   `p8check.py size ch01` estimates the room left (~4.7k compressed bytes at the handover).
 - **Music licence:** the soundtrack is "Pico-8 Tunes Vol. 1" by Gruber & krajzeg (CC BY-NC-SA,
-  **non-commercial**). Attribution must stay on the title screen and the web page.
+  **non-commercial**). Attribution must stay on the title screen and the web page. It **must be
+  replaced** before any paid release (Steam) - see DESIGN section 12/13.
 - Third-party carts were studied for reference only (gitignored in `tmp/`); nothing of theirs ships.
 
 ## 12. Starting the next chapter (checklist)
@@ -310,10 +311,12 @@ starting a chapter, copy the previous cart so the label and data come along.
 4. Write `chapters/ch02/AGENTS.md` (token figure, balance, flow) and flesh out `lore.md`.
 5. `build_web.ps1` picks the new cart up automatically; add it to the `CH` list in `docs/index.html`
    (`soon:true` -> real).
-6. **Open question (decide + log in DESIGN section 13):** how progress crosses carts. The save uses
-   `cartdata("vrk1")` and slot 0 holds the chapter number, so a cart only continues a save from its
-   own chapter; sharing the id would let ch02 read ch01's end state, but the web player cannot
-   `load()` a sibling cart, so the hand-off is probably "the picker opens the next cart".
+6. **Cross-cart progress (decided 2026-10-19):** ship the ten carts as **one multicart bundle** -
+   `EXPORT game.html ch01.p8 ch02.p8 ...` (web) and `game.bin` (Steam). Each chapter ends with
+   `dset(...); load("ch02")`; progress rides the shared `cartdata("vrk1")` id. `load()` works in our
+   exported web player and native binaries (not on the BBS). Add a bundle mode to
+   `p8check.py`/`build_web.ps1` when Ch2 lands; the per-chapter `<ch>.js` + picker stay for preview.
+   Replace the CC BY-NC-SA soundtrack before any paid release.
 
 ## 13. Known gaps & backlog (as of the 2026-10-19 handover)
 
@@ -326,9 +329,14 @@ starting a chapter, copy the previous cart so the label and data come along.
   (`00_core` / `60_dialogue`; note `wrap("")` returns one empty line, which `draw_term` relies on
   for cursor placement), shrink the `lc()` print wrapper, generalise `draw_stations`.
 - **Untested by tooling:** audio, feel/balance, anything only visible in motion - needs a human.
-- **Open design question:** how progress crosses chapter carts (checklist step 6 above).
+- **Resolved:** cross-cart progress = multicart bundle (checklist step 6 above). Still to build: the
+  bundle export mode in `p8check.py`/`build_web.ps1` and the `load()` chaining hook in each chapter.
 ## 14. Changelog (brief - full detail is in git)
 
+- [2026-10-19] **Shipping model: multicart.** Ten carts ship as one PICO-8 multicart bundle
+  (`EXPORT game.html ch01.p8 ...`; `game.bin` for Steam); chapters chain with `load()`, progress via
+  the shared `cartdata("vrk1")` (DESIGN sec13, checklist step 6). Not BBS-compatible. The CC BY-NC-SA
+  soundtrack blocks a paid release until replaced.
 - [2026-10-19] **Outpost polish:** REPAIR is now partial like REFUEL (a short wallet buys what it
   can afford, 0 units -> `NOT ENOUGH $`; smoke asserts partial + no-money); both stations redrawn
   from primitives (`draw_stations` in `chapters/ch01/src/70_world.lua`) - outpost is a ring/wheel

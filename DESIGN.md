@@ -257,6 +257,9 @@ negotiation portraits (start as procedural dither-silhouettes; upgrade to real a
 - Tracks (4-channel, from the 64-SFX budget): *Calm Flight*, *Combat*, *Station*, *Dread/Reveal*, *Ending*.
 - SFX list: laser, explosion, thrust, shield hit, hull hit, alarm, comms blip, menu, warp, cargo-open.
 - Generated now; the user may compose the **main theme** later (DAW work → transcribed to PICO-8 patterns).
+- **Licence:** the shipped placeholder soundtrack is "Pico-8 Tunes Vol. 1" by Gruber & krajzeg
+  (CC BY-NC-SA, **non-commercial**). It must be replaced with original/commissioned music before any
+  paid release (Steam).
 
 ---
 
@@ -274,7 +277,7 @@ dozen projectiles/particles. Off-screen sim is not culled (the field is small).
 **Token budget (hard 8,192 per cart) — reality check.** The original plan was an even split across
 systems (flight 450, enemy AI 900, negotiation 700, boss 700, …). As built, the **engine alone
 (`common/src`) costs 6,307 tokens** and every chapter cart pays it again; Chapter 1's own content is
-~1,711 tokens (world 299 · station 515 · story 897), total 8,018 → **~174 free**.
+~1,823 tokens (world 390 · station 536 · story 897), total 8,130 → **~62 free**.
 
 | Engine file | Tokens |
 | :-- | --: |
@@ -318,9 +321,16 @@ One cart **per chapter** (each its own 8192-token budget); `#include` resolves r
 the cart file's folder, so the Ch1 cart uses `../../common/src/...` + `src/...`. The engine/chapter
 boundary is the **chapter contract** in `AGENTS.md` §4 — engine code never contains chapter content.
 
-Ship via `EXPORT`/`SAVE` to `.p8.png` (includes flatten automatically), and to a browser
-player via `build_web.ps1` (site in `docs/`). All code lowercase, PICO-8 conventions, no
-external libs.
+**Shipping = one multicart bundle (decided 2026-10-19).** All ten carts ship as a *single* product.
+PICO-8's multicart `EXPORT` bundles up to 32 carts and lets each `load()` another as if it were a
+local file: `EXPORT game.html ch01.p8 ch02.p8 ... ch10.p8` (web) and `EXPORT game.bin …` (native
+Windows/Linux/Mac → Steam). A chapter ends with `dset(progress); load("ch02")`; progress rides the
+shared `cartdata("vrk1")` id. `load(name,breadcrumb,param)` also inserts a return-to-previous menu
+item and passes `param` to the new cart via `stat(6)`. Caveats: multicart is **not** supported on the
+BBS (web chaining only works in our own export), and `reload()`/data carts need the file extension.
+The per-chapter `<ch>.js` exports + the `docs/` picker stay for dev/preview.
+**Blocker for a paid (Steam) release: the current soundtrack is CC BY-NC-SA (non-commercial) — replace
+it with original music first.** All code lowercase, PICO-8 conventions, no external libs.
 
 **Save (`cartdata`):** pack into the 64 numeric slots — current chapter, branch flag, credits,
 missile count, upgrade tiers (3 small ints), quest_step, a story-flags bitfield, and a
@@ -330,6 +340,9 @@ seen-dialogue bitset. Version-tag the save.
 saved on dock, jump, recover and ship-menu EXIT; the title offers `X continue` / `O new game`.
 Continue always resumes docked at the outpost. Upgrade tiers and the dialogue bitset are still to
 come; a cart only continues a save tagged with its own `CHAPTER`.)*
+*(2026-10-19 multicart: all carts share the one `cartdata("vrk1")` id. For chaining, chapter/resume
+becomes a global "furthest chapter + flags" slot rather than a per-cart `CHAPTER` gate — implement
+when Ch2 lands.)*
 
 **Test loop:** `python common/tools/p8check.py all ch01` — exact token count, a scripted headless
 playthrough (40+ assertions on the real game logic), and 16 staged screenshots with a text-clipping
