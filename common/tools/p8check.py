@@ -7,6 +7,7 @@
     python common/tools/p8check.py all    [chapter]   tokens + smoke + shots   (default chapter: ch01)
     python common/tools/p8check.py export [chapter]   comment-stripped web export -> docs/<ch>.js (build_web.ps1 calls this)
     python common/tools/p8check.py size   [chapter]   how much compressed-code room is left for the web export
+    python common/tools/p8check.py bundle            build the multicart -> docs/game.html (all chapters, load() chained)
 
 Why this exists: the cart is always within a few dozen tokens of PICO-8's 8192 limit, so a
 normal test harness (cart code + driver) can never load. `smoke` and `shots` therefore
@@ -41,6 +42,13 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 PICO8 = os.environ.get("PICO8", r"C:\Program Files (x86)\PICO-8\pico8.exe")
 HARNESS = os.path.join(ROOT, "common", "tools", "harness")
 LIMIT = 8192
+
+# PICO-8 glyphs (e.g. the menu selector) are not in the Windows console codepage; keep the
+# tool from crashing when it echoes them.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
+except (AttributeError, ValueError):
+    pass
 
 # functions replaced by empty stubs in each harness (matched on the name after `function`)
 STRIP = {
@@ -380,8 +388,65 @@ def cmd_size(ch):
           "(real code compresses ~2:1, so roughly %d chars)" % (ch, lo, lo * 2))
     return True
 
+def chapters():
+    """Every chapter that has a cart, in ship order (ch01, ch02, ...)."""
+    base = os.path.join(ROOT, "chapters")
+    return [n for n in sorted(os.listdir(base)) if os.path.exists(cart_path(n))]
+
+
+def release_tree_all(chs):
+    """Like release_tree but for several chapters in one tree (shared stripped common/src).
+    Returns the list of stripped cart paths for PICO-8's multicart export."""
+    import shutil
+    web = os.path.join(ROOT, "tmp", "web")
+    shutil.rmtree(web, ignore_errors=True)
+    common = os.path.join("common", "src")
+    os.makedirs(os.path.join(web, common))
+    for name in sorted(os.listdir(os.path.join(ROOT, common))):
+        if name.endswith(".lua"):
+            write(os.path.join(web, common, name), strip_lua_comments(read(os.path.join(ROOT, common, name))))
+    carts = []
+    for ch in chs:
+        rel = os.path.join("chapters", ch, "src")
+        os.makedirs(os.path.join(web, rel))
+        for name in sorted(os.listdir(os.path.join(ROOT, rel))):
+            if name.endswith(".lua"):
+                write(os.path.join(web, rel, name), strip_lua_comments(read(os.path.join(ROOT, rel, name))))
+        dest = os.path.join("tmp", "web", "chapters", ch, ch + ".p8")
+        write(os.path.join(ROOT, dest), read(cart_path(ch)))
+        carts.append(os.path.join(ROOT, dest))
+    return carts
+
+
+def cmd_bundle(ch=None):
+    """Multicart: ships chapters 1-N in one bundle (chapters chain with load()). Not
+    BBS-compatible. See PICO-8 manual "Exporting Multiple Cartridges" and root AGENTS 11/12.
+
+    The main cart is the pico8 argument; the extras go inside the -export string, run from
+    the stripped tree root with *relative* paths (an absolute path with a space in it, e.g.
+    "Artem Gavrilov" - is split into separate tokens and the export comes out broken/empty)."""
+    chs = chapters()
+    carts = release_tree_all(chs)
+    web = os.path.join(ROOT, "tmp", "web")
+    rel = [os.path.relpath(c, web).replace(os.sep, "/") for c in carts]
+    out_rel = os.path.relpath(os.path.join(ROOT, "docs", "game.html"), web).replace(os.sep, "/")
+    target = os.path.join(ROOT, "docs", "game.html")
+    before = os.path.getmtime(target) if os.path.exists(target) else 0
+    exp = " ".join([out_rel] + rel[1:])
+    p = subprocess.run([PICO8, rel[0], "-export", exp], cwd=web,
+                       capture_output=True, text=True, timeout=240)
+    out = ((p.stdout or "") + (p.stderr or "")).strip()
+    ok = os.path.exists(target) and os.path.getmtime(target) > before and "failed" not in out and "not found" not in out
+    if ok:
+        print("bundle export: docs/game.html (%d carts: %s, %s bytes, comments stripped)"
+              % (len(chs), ",".join(chs), format(os.path.getsize(target), ",")))
+    else:
+        print("bundle export FAILED: %s" % (out or "no output written"))
+    return ok
+
+
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in ("tokens", "smoke", "shots", "all", "export", "size"):
+    if len(sys.argv) < 2 or sys.argv[1] not in ("tokens", "smoke", "shots", "all", "export", "size", "bundle"):
         print(__doc__)
         return 2
     cmd = sys.argv[1]
@@ -390,7 +455,7 @@ def main():
         print("PICO-8 not found at %s (set the PICO8 env var)" % PICO8)
         return 2
     steps = {"tokens": [cmd_tokens], "smoke": [cmd_smoke], "shots": [cmd_shots],
-             "export": [cmd_export], "size": [cmd_size],
+             "export": [cmd_export], "size": [cmd_size], "bundle": [cmd_bundle],
              "all": [cmd_tokens, cmd_smoke, cmd_shots]}[cmd]
     ok = True
     for s in steps:

@@ -5,7 +5,7 @@ contract, PICO-8 gotchas, tooling and shared rules. This file carries only what 
 to Chapter 1**, so work on later chapters isn't burdened by it. Story canon:
 `chapters/ch01/lore.md`.
 
-- **Cart budget:** 8130 / 8192 tokens (62 free) at the 2026-10-19 handover - measure with
+- **Cart budget:** 8156 / 8192 tokens (36 free) at the 2026-10-19 handover - measure with
   `p8check tokens ch01` before and after any change. ~40k / 65k chars. Each chapter is its own
   cart with its own 8192 budget (root `AGENTS.md` section 9). Web export: ~29k chars once comments
   are stripped, ~4.7k compressed bytes under the 15,360 limit (`p8check size ch01`).
@@ -16,7 +16,8 @@ to Chapter 1**, so work on later chapters isn't burdened by it. Story canon:
   chapters/ch01/ch01.p8             cart: #include list + __gfx__/__label__/__map__/__sfx__/__music__
   chapters/ch01/src/70_world.lua    CHAPTER, foes_def + FOE_POOL, ch_stations/ch_foes, objective, draw_stations
   chapters/ch01/src/71_station.lua  docking, services menu, economy (ECO)
-  chapters/ch01/src/72_story.lua    dialogue scripts, mission/inventory text, cutscene flow, warp (finale)
+  chapters/ch01/src/72_story.lua    dialogue scripts, mission/inventory text, cutscene flow, jump_end + warp beats
+                                    (the warp animation itself is engine: update_jump/draw_jump in common/src/40_ui.lua)
   chapters/ch01/tests/smoke.lua     logic playthrough       chapters/ch01/tests/shots.lua  staged screens
   chapters/ch01/lore.md             canon
   ```
@@ -39,9 +40,10 @@ to Chapter 1**, so work on later chapters isn't burdened by it. Story canon:
 3. **Quest stages** (`qs`): `1` salvage -> `2` first ore sale -> `3` hyper-cell fitted (gate
    unlocked). The radar compass needle points at the outpost, then the gate (`objective()`).
 4. **Jump Gate** (400,400): `X` -> `GATE LOCKED - FIT A HYPER-CELL` until `qs>=3`, then the
-   **warp cutscene** (radial streaks + 8 centred narration lines, `JPER=45` frames each; `X`
-   skips the reveal, then holds on `X continue`) -> `X` returns to the title and clears the save
-   (the warp cutscene IS the finale; there is no separate ending screen).
+   **warp cutscene** (radial streaks + 8 centred narration lines in `jlines`, `JPER=45` frames
+   each; `X` skips the reveal, then holds on `X continue`). `X` calls `jump_end()`:
+   `load("ch02")` in a multicart; with ch02 absent it falls back to the title and clears the save.
+   The warp cutscene IS the finale; there is no separate ending screen.
 
 ## Economy, enemies, balance (all tunable; mirror DESIGN section 8/9)
 

@@ -114,6 +114,14 @@ Fuel 100/100 (thrust **0.06/f**, doubled 2026-10-19) · Missiles 10/10 · Credit
   The Resistance agent's contact right after *is* the negotiation, and its outcome sets your
   standing/relationship into Ch4–5.
 
+**As built (2026-10-19):** `common/src/50_negotiation.lua` (state 3; optional include, so a chapter
+without `negs` pays nothing). Data: `negs.id={who=2,name="...",start="node",n={...}}`; a node is
+`{t=text,o={{t=label,to=node,c=cost}},res=outcome,go=fn,tm=frames,to=timeoutNode}`. Up to three
+options, credit-cost leverage (`c`), timed fallback, an outcome code and an on-enter hook.
+Consequences are physical through the `ambush` flag: `leave_station()` spends it on undock and calls
+the chapter's `ch_ambush()`. Ch2's dockmaster clearance is the first user. Still future: reputation/
+intel/disposition gating, and persisting the outcome/ambush across a save.
+
 ---
 
 ## 7. Failure, death & fuel
@@ -265,8 +273,8 @@ negotiation portraits (start as procedural dither-silhouettes; upgrade to real a
 
 ## 13. Technical architecture
 
-**States:** `0 Title · 1 Prologue/Cutscene · 2 Flight · 3 Comms/negotiation (reserved, unbuilt) ·
-4 Station · 5 Jump/Route · 6 Game Over · 8 Ship menu`.
+**States:** `0 Title · 1 Prologue/Cutscene · 2 Flight · 3 Comms/negotiation (built 2026-10-19,
+Ch2 first user) · 4 Station · 5 Jump/Route · 6 Game Over · 7 (reserved, unbuilt) · 8 Ship menu`.
 
 **Entity model:** flat pooled tables with swap-remove; overflow-safe distance collision (axis-guard
 before squaring — see AGENTS.md §5: 16.16 fixed point overflows past ~181px); no spatial hash.
@@ -275,25 +283,17 @@ patrols), `ROID_CAP=22` solid rocks (+ background rocks), a few
 dozen projectiles/particles. Off-screen sim is not culled (the field is small).
 
 **Token budget (hard 8,192 per cart) — reality check.** The original plan was an even split across
-systems (flight 450, enemy AI 900, negotiation 700, boss 700, …). As built, the **engine alone
-(`common/src`) costs 6,307 tokens** and every chapter cart pays it again; Chapter 1's own content is
-~1,823 tokens (world 390 · station 536 · story 897), total 8,130 → **~62 free**.
+systems (flight 450, enemy AI 900, negotiation 700, boss 700, …). As built (2026-10-19), the shared
+engine (`common/src`) is **~6.3k tokens** and every chapter cart pays it again, leaving ~1.5–1.8k for
+chapter content. Measured: **Ch1 = 8,156 / 8,192 (36 free)**, **Ch2 = 8,079 / 8,192 (113 free)**.
+The negotiation engine is `common/src/50_negotiation.lua` at **~378 tokens**, and it is *optional* -
+only chapters that define `negs` include it (Ch1 omits it and pays nothing for the second pillar).
 
-| Engine file | Tokens |
-| :-- | --: |
-| `00_core` (init/save/state machine/helpers) | 944 |
-| `10_entities` (flight sim, foes, rocks, drops, damage) | 1,699 |
-| `20_world` (system gen, flight drawing, fade) | 1,088 |
-| `30_combat` (guns, missiles, collisions) | 844 |
-| `40_ui` (menus, HUD, radar, title) | 1,199 |
-| `60_dialogue` (portrait dialogue runner) | 528 |
-| `01_font` | 5 |
-
-Consequences for planning: the unbuilt **negotiation engine (~700)** and **boss (~700)** do not fit
-next to the current engine without trimming it, so (a) every engine token saved is paid back in
-all ten carts, (b) chapters that don't need a subsystem can leave it out of their `#include` list
-(e.g. a cutscene-heavy chapter without full combat), and (c) the negotiation layer should be
-designed to reuse `menu_*`/`dlg_*` rather than add a new UI. Measure with `p8check tokens`.
+Consequences for planning: a **boss (~700)** and fancier negotiation features still do not fit next
+to the current engine without trimming it, so (a) every engine token saved is paid back in all ten
+carts, (b) chapters that don't need a subsystem can leave it out of their `#include` list (e.g. a
+cutscene-heavy chapter without full combat, a chapter without negotiation), and (c) new UI should
+reuse `menu_*`/`dlg_*` rather than add its own. Measure with `p8check tokens`.
 Reserve **~22–25k of the 65,535 chars** for dialogue/narration (Ch1 uses ~40k total).
 
 **Source layout & build:**
@@ -304,14 +304,16 @@ common/src/01_font.lua      # custom title font (memcpy from __map__ -> 0x5600)
 common/src/10_entities.lua  # flight sim, foes AI, rocks, drops, particles, damage, camera
 common/src/20_world.lua     # load_system (seeded dressing), flight drawing, fade trail, sprites
 common/src/30_combat.lua    # weapons, projectiles, missiles, collisions
-common/src/40_ui.lua        # text helpers, menus, HUD, radar, title, game over
-common/src/60_dialogue.lua  # portrait dialogue runner (scripts live in the chapter)
-common/tools/               # p8check.py (tokens/smoke/shots), shotdiff.py, harness/, gen_*.py
+common/src/40_ui.lua        # text helpers, menus, HUD, radar, title, game over, warp cutscene
+common/src/50_negotiation.lua # OPTIONAL docked negotiation (state 3); only chapters using `negs`
+common/src/60_dialogue.lua  # portrait dialogue runner, story pages, terminal page (scripts live in the chapter)
+common/tools/               # p8check.py (tokens/smoke/shots/export/bundle), shotdiff.py, harness/, gen_*.py
 chapters/ch01/ch01.p8       # thin cart: #include lines + gfx/label/map/sfx/music data
 chapters/ch01/src/70_world.lua    # stations/foes hooks, enemy roster, station drawing
 chapters/ch01/src/71_station.lua  # dock services, economy
-chapters/ch01/src/72_story.lua    # dialogue scripts, quests, cutscenes, warp (the finale)
+chapters/ch01/src/72_story.lua    # dialogue scripts, quests, cutscenes, jump_end + warp text
 chapters/ch01/tests/              # smoke.lua + shots.lua drivers for p8check
+chapters/ch02/                    # Kaelus Prime slice (world/station/story + negotiation script)
 docs/  build_web.ps1              # Pages player: index.html shell + <ch>.js per cart
 tmp/                              # gitignored local scratch (research, screenshots)
 DESIGN.md  AGENTS.md  chapters/<ch>/lore.md  chapters/<ch>/AGENTS.md
@@ -321,14 +323,17 @@ One cart **per chapter** (each its own 8192-token budget); `#include` resolves r
 the cart file's folder, so the Ch1 cart uses `../../common/src/...` + `src/...`. The engine/chapter
 boundary is the **chapter contract** in `AGENTS.md` §4 — engine code never contains chapter content.
 
-**Shipping = one multicart bundle (decided 2026-10-19).** All ten carts ship as a *single* product.
+**Shipping = one multicart bundle (built 2026-10-19).** All ten carts ship as a *single* product.
 PICO-8's multicart `EXPORT` bundles up to 32 carts and lets each `load()` another as if it were a
-local file: `EXPORT game.html ch01.p8 ch02.p8 ... ch10.p8` (web) and `EXPORT game.bin …` (native
-Windows/Linux/Mac → Steam). A chapter ends with `dset(progress); load("ch02")`; progress rides the
-shared `cartdata("vrk1")` id. `load(name,breadcrumb,param)` also inserts a return-to-previous menu
-item and passes `param` to the new cart via `stat(6)`. Caveats: multicart is **not** supported on the
-BBS (web chaining only works in our own export), and `reload()`/data carts need the file extension.
-The per-chapter `<ch>.js` exports + the `docs/` picker stay for dev/preview.
+local file. `p8check.py bundle` (run by `build_web.ps1`) emits `docs/game.html` + `docs/game.js`
+from the comment-stripped sources; the main cart is the pico8 argument and the extras go inside the
+`-export` string, using **relative, space-free paths** (an absolute path containing a space breaks
+the export). A chapter ends with `jump_end()` → `load("chNN")` (returns `false` if the sibling is
+absent, so a lone cart falls back to the title); progress rides the shared `cartdata("vrk1")` id.
+`load(name,breadcrumb,param)` passes `param` to the new cart via `stat(6)` (not used yet). Caveats:
+multicart is **not** supported on the BBS, headless `-x` does not actually swap carts (only the
+exported bundle does), `game.bin` for Steam is not built, and `reload()`/data carts need the file
+extension. The per-chapter `<ch>.js` exports + the `docs/` picker stay for dev/preview.
 **Blocker for a paid (Steam) release: the current soundtrack is CC BY-NC-SA (non-commercial) — replace
 it with original music first.** All code lowercase, PICO-8 conventions, no external libs.
 
@@ -340,13 +345,15 @@ seen-dialogue bitset. Version-tag the save.
 saved on dock, jump, recover and ship-menu EXIT; the title offers `X continue` / `O new game`.
 Continue always resumes docked at the outpost. Upgrade tiers and the dialogue bitset are still to
 come; a cart only continues a save tagged with its own `CHAPTER`.)*
-*(2026-10-19 multicart: all carts share the one `cartdata("vrk1")` id. For chaining, chapter/resume
-becomes a global "furthest chapter + flags" slot rather than a per-cart `CHAPTER` gate — implement
-when Ch2 lands.)*
+*(2026-10-19 Ch2: slot 6 now stores the run's layout seed. A negotiation's outcome/ambush flag are
+**not** persisted — save slots 7/9 were dropped for token budget, so reloading during the ambush
+loses it. The per-cart `CHAPTER` gate is still in place: a save continues only in its own cart.
+Carrying credits/upgrades into the next chapter and the global "furthest chapter + flags" slot are
+still not built; `stat(6)` load-param carry is the intended hook.)*
 
 **Test loop:** `python common/tools/p8check.py all ch01` — exact token count, a scripted headless
-playthrough (40+ assertions on the real game logic), and 16 staged screenshots with a text-clipping
-sweep (the agent can read the PNGs). The user still does interactive playtests for feel/balance;
+playthrough (40+ assertions on the real game logic), and staged screenshots (16 for Ch1, 13 for
+Ch2) with a text-clipping sweep (the agent can read the PNGs). The user still does interactive playtests for feel/balance;
 audio is untested by tooling. See `AGENTS.md` §7.
 
 ---
@@ -356,4 +363,6 @@ audio is untested by tooling. See `AGENTS.md` §7.
 - Working names (Rooke, Kesh) and Ch4–10 system names are provisional.
 - All numeric baselines (physics, prices, enemy stats, rewards) are tunable during playtest.
 - Whether shop stock is hard era-gated or purely cost-gated: leaning **both** (stock era-gated, cost throttles).
-- Negotiation engine data format details to be finalized when implementation begins.
+- ~~Negotiation engine data format details to be finalized when implementation begins.~~
+  *(Settled 2026-10-19 and built - see §6 and §13. Remaining: reputation/intel gating and saving
+  the outcome/ambush.)*

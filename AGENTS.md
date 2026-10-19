@@ -75,7 +75,8 @@ common/src/01_font.lua      memcpy the title font from __map__ to 0x5600
 common/src/10_entities.lua  player/flight sim, foes AI, rocks, drops, particles, damage, camera
 common/src/20_world.lua     load_system (seeded dressing), flight drawing, fade/trail, sprites
 common/src/30_combat.lua    guns, charge, homing missiles, collisions
-common/src/40_ui.lua        text helpers, menus, HUD, radar, title, game over
+common/src/40_ui.lua        text helpers, menus, HUD, radar, title, game over, warp cutscene
+common/src/50_negotiation.lua  OPTIONAL docked negotiation (state 3); only chapters using `negs`
 common/src/60_dialogue.lua  portrait dialogue runner (typewriter, two heads)
 common/tools/p8check.py     tokens / smoke / shots (section 7)       common/tools/shotdiff.py
 common/tools/harness/       prelude + helpers injected into test carts
@@ -90,21 +91,23 @@ build_web.ps1               exports every chapter cart to docs/<ch>.js
 ```
 
 Include order (globals - order matters only for top-level statements, functions resolve at call
-time): `00 01 10 20 30 40 60` (engine) then the chapter's `70 71 72 ...`.
+time): `00 01 10 20 30 40 50 60` (engine; `50_negotiation` is optional - only include it in a
+chapter that uses `negs`) then the chapter's `70 71 72 ...`.
 
 **State machine** (`state`, dispatched in `_update`/`_draw` of `00_core.lua`; add new states
-to **both**): `0` title - `1` story/cutscene - `2` flight - `4` station - `5` jump/warp -
-`6` game over - `8` ship menu. (`3` comms/negotiation and `7` are reserved, unbuilt.)
+to **both**): `0` title - `1` story/cutscene - `2` flight - `3` negotiation - `4` station -
+`5` jump/warp - `6` game over - `8` ship menu. (`7` is reserved, unbuilt. State `3` needs
+`50_negotiation.lua`; Ch1 does not include it.)
 
 **Chapter contract** - what the engine expects a chapter to define (all in `chapters/<ch>/src`):
 
 | Group | Names |
 | --- | --- |
-| Constants / data | `CHAPTER` (number; seeds the layout, tags the save), `foes_def` (per kind: `hp shd spd r cd range dmg bs bounty spr`), `FOE_POOL` (kinds reinforcements draw from), `talks` + `talkname` (dialogue scripts) |
+| Constants / data | `CHAPTER` (number; seeds the layout, tags the save), `foes_def` (per kind: `hp shd spd r cd range dmg bs bounty spr`), `FOE_POOL` (kinds reinforcements draw from), `talks` + `talkname` (dialogue scripts), `negs` (optional negotiation scripts - needs state 3) |
 | World hooks | `ch_stations()` (adds authored stations; first one is the respawn/continue dock), `ch_foes()` (opening patrol; called last so seeded RNG order stays stable), `objective()` (radar compass target), `draw_stations()` |
 | Station (state 4) | `nearest_station(range)`, `dock(s)`, `update_station()`, `draw_station()` |
 | Story (state 1) | `init_story()`, `start_story()`, `update_story()`, `draw_story()`, `mission_lines()`, `inventory_lines()` |
-| Jump / warp (5) | `start_jump()`, `update_jump()`, `draw_jump()` |
+| Jump / warp (5) | `start_jump()`, `jlines` (narration beats, <=31 chars) + `jump_end()` (title, or `load("chNN")` chain). The warp animation itself is engine (`update_jump`/`draw_jump` in `40_ui`). |
 | Engine-owned story globals the chapter may use | `qs` (quest stage), `ohint` (mission hint unlocked) - both persisted by `save_game` |
 
 **Key globals:** `p` (player), `foes roids drops bullets missiles parts blasts floats planets
@@ -199,6 +202,7 @@ $py = "C:\Users\Artem Gavrilov\AppData\Local\Python\bin\python.exe"
 & $py common\tools\p8check.py all    ch01   # all three (exit code 1 on any failure)
 & $py common\tools\p8check.py size   ch01   # compressed-code headroom for the web export (~4.7k bytes left)
 & $py common\tools\p8check.py export ch01   # comment-stripped web export -> docs\ch01.js (build_web.ps1 does this)
+& $py common\tools\p8check.py bundle        # multicart: docs/game.html + game.js (all carts, load() chained)
 & $py common\tools\shotdiff.py tmp\shots\before.txt tmp\shots\ch01_dump.txt   # px diff per screen
 ```
 
@@ -251,13 +255,15 @@ Each chapter cart has its **own** 8192 tokens, but the engine is included in eve
 engine tokens are paid N times: **trimming `common/` is the best investment**, and engine
 additions must be justified. Current figure per chapter is in its own `AGENTS.md`.
 
-Where the tokens are (2026-10-19, Ch1 = 8130): engine **6307** (`10_entities` 1699, `40_ui` 1199,
-`20_world` 1088, `00_core` 944, `30_combat` 844, `60_dialogue` 528) + chapter content **~1823**
-(`72_story` 897, `71_station` 536, `70_world` 390). So a new chapter has only ~1.9k tokens for
-its own content, and the unbuilt negotiation layer / boss will not fit without trimming the
-engine or leaving unused subsystems out of a chapter's `#include` list (DESIGN section 13). If you are out of room: measure first (`p8check tokens`), then look for
-duplicated helpers (`wrap` vs `wrap_off`), one-use locals, and defaults for params every caller
-passes. Features already cut for budget (re-add only if there is room): second enemy (raider),
+Current figures (2026-10-19): **Ch1 = 8156 / 8192 (36 free)**, **Ch2 = 8079 / 8192 (113 free)**.
+The shared engine is ~6.3k, so a chapter gets only ~1.5-1.8k for its own content.
+`50_negotiation.lua` is ~378 tokens and is included only by chapters that use `negs` (Ch1 omits
+it, so Ch1 pays nothing for the second pillar). Ch2 fit by cutting the labour platform, BUY
+MISSILE and the raider from the first draft - see `chapters/ch02/AGENTS.md`. A boss / advanced
+negotiation features still need engine trims or unused subsystems left out of a chapter's
+`#include` list (DESIGN section 13). If you are out of room: measure first (`p8check tokens`),
+then look for duplicated helpers (`wrap` vs `wrap_off`), one-use locals, and defaults for params
+every caller passes. Features already cut for budget (re-add only if there is room): second enemy (raider),
 charge meter, dead-space scan objective, hit flash, low-HP/fuel HUD blink, one-time control hint,
 station art. In-editor, the `info` command prints code/token/compressed sizes.
 
@@ -295,6 +301,12 @@ starting a chapter, copy the previous cart so the label and data come along.
   (tokens unchanged - verified identical), exports from there, and **fails loudly** if PICO-8 refuses
   ("code block too large" = compressed code > 15,360 bytes) instead of shipping a stale file.
   `p8check.py size ch01` estimates the room left (~4.7k compressed bytes at the handover).
+- **Multicart bundle (built 2026-10-19):** `build_web.ps1` also runs `p8check.py bundle` ->
+  `docs/game.html` + `docs/game.js` (main cart as the pico8 argument, extras inside the `-export`
+  string, run from `tmp/web` with **relative, space-free paths** - an absolute path containing e.g.
+  `Artem Gavrilov` is split on the space and the export comes out empty/incomplete). Both files are
+  committed build outputs alongside the per-chapter `.js`. Headless `-x` reports `load()`'s
+  resolvability but does **not** actually swap carts, so chaining is only exercised by the bundle.
 - **Audio licence:** the soundtrack is "Pico-8 Tunes Vol. 1" by Gruber & krajzeg and the gameplay
   SFX are Gruber's "Pico-8 SFX Pack!" (both CC BY-NC-SA, **non-commercial**). Attribution (title
   screen + web page) must stay. Both **must be replaced** before any paid release (Steam) - see
@@ -312,28 +324,50 @@ starting a chapter, copy the previous cart so the label and data come along.
 4. Write `chapters/ch02/AGENTS.md` (token figure, balance, flow) and flesh out `lore.md`.
 5. `build_web.ps1` picks the new cart up automatically; add it to the `CH` list in `docs/index.html`
    (`soon:true` -> real).
-6. **Cross-cart progress (decided 2026-10-19):** ship the ten carts as **one multicart bundle** -
-   `EXPORT game.html ch01.p8 ch02.p8 ...` (web) and `game.bin` (Steam). Each chapter ends with
-   `dset(...); load("ch02")`; progress rides the shared `cartdata("vrk1")` id. `load()` works in our
-   exported web player and native binaries (not on the BBS). Add a bundle mode to
-   `p8check.py`/`build_web.ps1` when Ch2 lands; the per-chapter `<ch>.js` + picker stay for preview.
-   Replace the CC BY-NC-SA soundtrack before any paid release.
+6. **Cross-cart progress:** ship the ten carts as **one multicart bundle** - `p8check bundle`
+   (built) -> `docs/game.html`/`game.js` (web); `game.bin` for Steam still to build. Each chapter
+   ends with `jump_end()` -> `load("chNN")` (returns `false` if the sibling is absent, then
+   `reset_game()`); progress rides the shared `cartdata("vrk1")` id. `load()` works in the exported
+   web player and native binaries (not on the BBS). The per-chapter `<ch>.js` + picker stay for
+   preview. **Not done:** carrying credits/upgrades between chapters (each still boots with its own
+   defaults; `stat(6)` load-param carry is the intended hook). Replace the CC BY-NC-SA soundtrack
+   before any paid release.
 
 ## 13. Known gaps & backlog (as of the 2026-10-19 handover)
 
-- **Not built:** the docked negotiation layer (state 3), Ch2-10, upgrade tiers (DESIGN section 8),
-  the Paragon boss, a real `.p8.png` release label per chapter.
-- **Cut for the 8192-token wall, re-addable now there is headroom** (Ch1 has ~62 free): second
-  enemy (raider; sprites already in the sheet), charge meter, hit flash, low-HP/fuel HUD blink,
-  one-time control hint, dead-space scan side objective.
+- **Built:** the docked negotiation layer (state 3, `common/src/50_negotiation.lua`), Ch2 (a Kaelus
+  Prime vertical slice with a **placeholder script** - see `chapters/ch02/AGENTS.md`), and the
+  multicart bundle (`p8check bundle` -> `docs/game.html`/`game.js`).
+- **Not built:** Ch3-10, upgrade tiers (DESIGN section 8), the Paragon boss, a real `.p8.png`
+  release label per chapter, `game.bin` for Steam.
+- **Known gaps in the new systems:** a negotiation's `nres`/ambush flag are not persisted (a reload
+  loses the pending ambush); credits/upgrades are not carried between chapters; the `load()` chain
+  only actually swaps carts in the exported bundle.
+- **Cut from Ch2 for the 8192-token wall:** the labour platform, BUY MISSILE and the raider - see
+  `chapters/ch02/AGENTS.md`. Ch1 has 36 free: second enemy (raider; sprites already in the sheet),
+  charge meter, hit flash, low-HP/fuel HUD blink, one-time control hint, dead-space scan side
+  objective are still re-addable.
 - **Possible engine trims** (each pays back in every chapter): merge `wrap`/`wrap_off`
   (`00_core` / `60_dialogue`; note `wrap("")` returns one empty line, which `draw_term` relies on
   for cursor placement), shrink the `lc()` print wrapper, generalise `draw_stations`.
 - **Untested by tooling:** audio, feel/balance, anything only visible in motion - needs a human.
-- **Resolved:** cross-cart progress = multicart bundle (checklist step 6 above). Still to build: the
-  bundle export mode in `p8check.py`/`build_web.ps1` and the `load()` chaining hook in each chapter.
+- **Resolved:** cross-cart progress = multicart bundle (step 6); bundle export mode + `load()`
+  chaining hooks are in.
 ## 14. Changelog (brief - full detail is in git)
 
+- [2026-10-19] **Chapter 2 vertical slice (placeholder script).** Kaelus Prime checkpoint: arrival
+  dialogue -> check-in -> **dockmaster clearance negotiation** (bribe 100$, bluff -> flagged) ->
+  gate -> warp. `chapters/ch02/src` + adapted smoke/shots. **8079/8192 tokens (113 free)** - fit by
+  cutting the labour platform, BUY MISSILE and the raider from the first draft. All Ch2 content
+  text is a stand-in for the author's script; `docs/index.html` adds ch02 to the picker
+  (`p8_cart_ver` 4).
+- [2026-10-19] **Negotiation engine (state 3).** New optional `common/src/50_negotiation.lua`
+  (Ch1 does not include it): portraits, branching options, credit-cost leverage, outcome `nres`,
+  timed nodes and an ambush-on-undock hook. Ch2 is its first user.
+- [2026-10-19] **Engine hoists + multicart chain.** Moved the warp cutscene (`update_jump`/
+  `draw_jump`/`JPER`) and `draw_term`/`next_spage` into `common/src` (Ch1 pixel-identical); chapters
+  now end with `jump_end()` -> `load("chNN")` (returns `false` if absent -> `reset_game()`).
+  `p8check.py bundle` builds `docs/game.html` + `game.js` from all carts. Ch1 = 8156/8192 (36 free).
 - [2026-10-19] **Group SFX vendored.** Gameplay SFX (ids 0-7, 10) are now Gruber's "Pico-8 SFX
   Pack!" (`tid=34367`, CC BY-NC-SA), replacing the original set; music is unchanged (Gruber &
   krajzeg). Title + web credit now read "audio:". Deliberately avoided pack #34/#47/#57 (Super Mario

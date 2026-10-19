@@ -23,4 +23,10 @@ foreach ($ch in $chapters) {
     & $pyExe @pyArgs $tool export $ch.Name
     if ($LASTEXITCODE -ne 0) { throw "export of $($ch.Name) failed" }
 }
+
+# Multicart: one bundle of every chapter, chained with load() (docs/game.html). This is the
+# shipping artifact; the per-chapter .js + picker above stay for browsing/preview (root AGENTS 12).
+& $pyExe @pyArgs $tool bundle
+if ($LASTEXITCODE -ne 0) { throw "multicart bundle export failed" }
+
 Write-Host "done: $(Join-Path $root 'docs')"

@@ -198,3 +198,30 @@ function draw_gameover()
   if frame%40<25 then pc("press "..BX.." to recover",92,GT) end
  end
 end
+
+-- warp cutscene (state 5): radial streaks + one narration line per beat. The chapter
+-- supplies `jlines` (keep lines <= 31 chars) and defines `jump_end()` (title, or the
+-- multicart chain to the next cart).
+JPER=45
+
+function update_jump()
+ jt+=1
+ if btnp(4) or btnp(5) then
+  -- X skips the reveal; once every line is shown, X leaves the cutscene
+  if jt>#jlines*JPER then jump_end() else jt=#jlines*JPER+1 end
+ end
+end
+
+function draw_jump()
+ for i=0,19 do
+  local a=i/20
+  local r=8+((i*13+frame*16)%104)
+  line(64+cos(a)*r,64+sin(a)*r,64+cos(a)*(r+9),64+sin(a)*(r+9),i%4==0 and 7 or 12)
+ end
+ local n=clampi(flr(jt/JPER)+1,0,#jlines)
+ for i=1,n do
+  local k=jlines[i]
+  print(k,flr((128-sw(k))/2),12+(i-1)*11,7)
+ end
+ if jt>#jlines*JPER and frame%40<25 then pc(BX.." continue",118,GT) end
+end

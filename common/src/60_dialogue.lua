@@ -96,3 +96,25 @@ function draw_dlg()
   if dg.ch>=#dg.s[dg.i] and frame%30<18 then print(chr(131),119,y+30,GT) end
  end
 end
+
+-- story helpers shared by chapters: advance a page, and draw a terminal page
+function next_spage()
+ spg+=1
+ spt=0
+ if spg>#spages then state=2 end
+end
+
+function draw_term(pg)
+ local n=spt*3
+ local y=30
+ for i=1,#pg.lines do
+  local s=pg.lines[i]
+  local shown=sub(s,1,clampi(n,0,#s))
+  for k in all(wrap(shown,29)) do
+   print(k,8,y,GT)
+   y+=8
+  end
+  n-=#s
+ end
+ if frame%30<15 then print(chr(16),8,y,GT) end
+end

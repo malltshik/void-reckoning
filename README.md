@@ -6,9 +6,12 @@ system, and negotiation when you dock. Dark sci-fi tone.
 
 **▶ Play in your browser:** <https://malltshik.github.io/void-reckoning/>
 
-**Status:** **Chapter 1** is a playable vertical slice — mine ore, dock at the outpost,
-sell, buy a hyper-cell, jump out. The game is released chapter by chapter; Chapters 2–10
-and the docked negotiation layer are not built yet.
+**Status:** **Chapter 1** is a complete vertical slice — mine ore, dock at the outpost,
+sell, buy a hyper-cell, jump out. **Chapter 2** is a playable preview at Kaelus Prime: check in,
+then talk, bribe or bluff your way to clearance at the dockmaster's desk (the first
+**negotiation** scene). Its story text is a placeholder while the real script is written.
+Chapters 3–10 are not built. Chapters chain in the multicart bundle
+(`docs/game.html`); the per-chapter pages stay for preview.
 
 Progress autosaves on dock, on jump and on quit; the title offers **continue / new game**.
 Dying respawns you at the last dock for a 25% fee and your cargo — the story never resets.
@@ -32,13 +35,18 @@ Requires PICO-8 (v0.2.7):
 
 ```
 "C:\Program Files (x86)\PICO-8\pico8.exe" chapters\ch01\ch01.p8
+"C:\Program Files (x86)\PICO-8\pico8.exe" chapters\ch02\ch02.p8
 ```
+
+Alone, a chapter ends by returning to the title; the jump to the next chapter only works in
+the multicart bundle (`docs\game.html`, built by `build_web.ps1`).
 
 ## Browser build
 
 The GitHub Pages site under `docs/` is one player page (`index.html`) plus one exported
-`<chapter>.js` per chapter. `index.html` loads `?cart=<chapter>.js` (default `ch01.js`)
-and offers a small chapter picker. Regenerate the `.js` after changing a cart with:
+`<chapter>.js` per chapter, and the multicart bundle `game.html`/`game.js` (chapters chained
+in order). `index.html` loads `?cart=<chapter>.js` (default `ch01.js`) and offers a small
+chapter picker. Regenerate the `.js`/bundle after changing a cart with:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File build_web.ps1
@@ -49,12 +57,12 @@ Publish it from **Settings → Pages → Deploy from a branch → `main` / `docs
 ## Layout
 
 ```
-common/src/*.lua      shared engine   (core, font, entities, world, combat, ui, dialogue)
-common/tools/         p8check.py (tokens / smoke test / screenshots), shotdiff.py, asset generators
+common/src/*.lua      shared engine   (core, font, entities, world, combat, ui, negotiation, dialogue)
+common/tools/         p8check.py (tokens / smoke / screenshots / web export + bundle), shotdiff.py, generators
 common/font_map.hex   custom title font bytes, stored in each cart's map region
 chapters/ch01/        Chapter 1: cart, src/ (world, station, story), tests/, lore.md, AGENTS.md
-chapters/ch02/        Chapter 2 (lore only, in progress)
-docs/                 GitHub Pages player (index.html shell + one <chapter>.js per cart)
+chapters/ch02/        Chapter 2 (Kaelus Prime): same layout; first negotiation scene
+docs/                 GitHub Pages player (index.html shell, <chapter>.js per cart, game.html bundle)
 AGENTS.md             start here when developing: workflow, architecture, PICO-8 gotchas, tooling
 DESIGN.md             full game design
 ```

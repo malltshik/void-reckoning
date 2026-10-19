@@ -24,7 +24,7 @@ ARX=256
 ARY=256
 ARR=380
 
--- states: 0 title, 1 story, 2 flight, 4 station, 5 jump, 6 gameover, 8 menu
+-- states: 0 title, 1 story, 2 flight, 3 negotiation, 4 station, 5 jump, 6 gameover, 8 menu
 function _init()
  cartdata("vrk1")
  mtrack=-1
@@ -80,6 +80,7 @@ end
 -- missiles. Saved on dock, on jump and on quit; loaded once at boot. A save always
 -- resumes docked at the outpost (`active`, set by load_system). Slot map: 0 chapter,
 -- 1 qs, 2 ohint, 3 credits, 4 ore, 5 missiles, 6 layout seed, 8 "a save exists".
+-- (Negotiation outcome/ambush are not persisted yet - see root AGENTS section 13.)
 function save_game()
  dset(0,CHAPTER) dset(1,qs) dset(2,ohint and 1 or 0)
  dset(3,p.credits) dset(4,p.ore) dset(5,p.mis) dset(6,SEED) dset(8,1)
@@ -205,6 +206,8 @@ function _update()
   update_story()
  elseif state==2 then
   update_flight()
+ elseif state==3 then
+  update_neg()
  elseif state==4 then
   update_station()
  elseif state==5 then
@@ -225,6 +228,7 @@ function _draw()
  if state==0 then draw_title()
  elseif state==1 then draw_story()
  elseif state==2 then draw_flight()
+ elseif state==3 then draw_neg()
  elseif state==4 then draw_station()
  elseif state==5 then draw_jump()
  elseif state==8 then draw_menu()

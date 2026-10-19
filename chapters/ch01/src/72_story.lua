@@ -81,12 +81,6 @@ function start_story()
  spt=0
 end
 
-function next_spage()
- spg+=1
- spt=0
- if spg>#spages then state=2 end
-end
-
 function update_story()
  local pg=spages[spg]
  spt+=1
@@ -116,21 +110,6 @@ function draw_story()
  elseif pg.kind=="worm" then draw_wormhole()
  elseif pg.kind=="term" then draw_term(pg)
  else draw_dlg() end
-end
-
-function draw_term(pg)
- local n=spt*3
- local y=30
- for i=1,#pg.lines do
-  local s=pg.lines[i]
-  local shown=sub(s,1,clampi(n,0,#s))
-  for k in all(wrap(shown,29)) do
-   print(k,8,y,GT)
-   y+=8
-  end
-  n-=#s
- end
- if frame%30<15 then print(chr(16),8,y,GT) end
 end
 
 -- cutscene: the ship races through open space and is swallowed by the wormhole,
@@ -178,9 +157,9 @@ function start_jump()
 end
 
 -- warp cutscene: the gate hurls you clear of the system, but your destination is
--- still unknown. Narrated in white (dialogue style) with no portraits.
--- Keep every line <= 32 chars: the screen is 128px and glyphs are 4px (shots test checks).
-JPER=45
+-- still unknown. Narrated in white (dialogue style) with no portraits. The animation
+-- itself is engine (40_ui.lua); the chapter supplies only the beats.
+-- Keep every line <= 31 chars: the shots test checks for clipping.
 jlines={
  "the gate folds shut behind you.",
  "the system is gone.",
@@ -192,26 +171,7 @@ jlines={
  "(to be continued...)"
 }
 
-function update_jump()
- jt+=1
- if btnp(4) or btnp(5) then
-  -- X skips the reveal; once every line is shown, X ends the chapter back at the title
-  if jt>#jlines*JPER then reset_game() else jt=#jlines*JPER+1 end
- end
-end
-
-function draw_jump()
- -- warp: radial streaks racing outward from the core
- for i=0,19 do
-  local a=i/20
-  local r=8+((i*13+frame*16)%104)
-  line(64+cos(a)*r,64+sin(a)*r,64+cos(a)*(r+9),64+sin(a)*(r+9),i%4==0 and 7 or 12)
- end
- -- narration revealed a line at a time
- local n=clampi(flr(jt/JPER)+1,0,#jlines)
- for i=1,n do
-  local k=jlines[i]
-  print(k,flr((128-sw(k))/2),12+(i-1)*11,7)
- end
- if jt>#jlines*JPER and frame%40<25 then pc(BX.." continue",118,GT) end
+-- end of chapter: hand off to ch02 in a multicart; a lone cart falls back to the title
+function jump_end()
+ if load("ch02")==false then reset_game() end
 end
