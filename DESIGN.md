@@ -40,7 +40,9 @@ Everything below is the full 10-chapter design; Part I is the build target first
 - **Token rules:** a word or operator = 1 token; bracket-pairs and strings = 1 token each;
   commas, periods, `local`, `;`, `end`, and comments are free. → All dialogue blocks live in
   pipe-delimited strings (`"A|B|C"`) parsed by one lookup, so a whole chapter of text ≈ 1 token.
-- **Compressed-size limit** (<15,360 bytes) applies only to `.p8.png`/`.p8.rom` export, not `.p8`.
+- **Compressed-size limit** (<15,360 bytes) applies only to `.p8.png`/`.p8.rom` **and the html
+  web-player export**, not `.p8`. (A near-full cart trips it; keep big raw data — e.g. the title
+  font — in `__map__`, not in code. See AGENTS §12.)
 - Author in `#include` chunks; **each chapter ships as its own cart** (`.p8.png` flattens includes).
 
 ---
@@ -275,25 +277,27 @@ Reserve **~22–25k of the 65,535 chars** for dialogue/narration (~2–2.5k char
 
 ```
 common/src/00_core.lua      # init, state machine, input, state dispatch
-common/src/01_font.lua      # custom title font (poked to 0x5600)
+common/src/01_font.lua      # custom title font (memcpy from __map__ -> 0x5600)
 common/src/10_entities.lua  # pools, collision, spawn
 common/src/20_world.lua     # system gen, camera, flight drawing
 common/src/30_combat.lua    # weapons, projectiles, missiles
 common/src/40_ui.lua        # HUD, menus, text/typewriter
 common/src/60_dialogue.lua  # pipe-string parse, dialogue engine
-common/tools/gen_gfx.py     # art -> __gfx__   (gen_audio.py -> __sfx__/__music__)
-chapters/ch01/ch01.p8       # thin cart: #include lines + gfx/sfx/music data
+common/tools/gen_gfx.py     # art -> __gfx__  (gen_audio.py -> __sfx__/__music__; gen_fontmap.py -> __map__)
+chapters/ch01/ch01.p8       # thin cart: #include lines + gfx/label/map/sfx/music data
 chapters/ch01/src/50_station.lua  # dock services, economy
 chapters/ch01/src/70_story.lua    # chapter flow, quests, cutscenes
 chapters/ch01/src/80_boss.lua     # Paragon (Ch10 stub)
+docs/  build_web.ps1              # GitHub Pages web player (one per chapter)
 DESIGN.md  AGENTS.md  chapters/<ch>/lore.md
 ```
 
 One cart **per chapter** (each its own 8192-token budget); `#include` resolves relative to
 the cart file's folder, so the Ch1 cart uses `../../common/src/...` + `src/...`.
 
-Ship via `EXPORT`/`SAVE` to `.p8.png` (includes flatten automatically). All code lowercase,
-PICO-8 conventions, no external libs.
+Ship via `EXPORT`/`SAVE` to `.p8.png` (includes flatten automatically), and to a browser
+player via `build_web.ps1` (site in `docs/`). All code lowercase, PICO-8 conventions, no
+external libs.
 
 **Save (`cartdata`):** pack into the 64 numeric slots — current chapter, branch flag, credits,
 missile count, upgrade tiers (3 small ints), quest_step, a story-flags bitfield, and a

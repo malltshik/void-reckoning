@@ -73,14 +73,20 @@ validation.** Chapters 2-10 and the negotiation layer are not built yet.
 - Token accounting: a word/operator/identifier = 1 token; a bracket-pair `()`/`[]`/`{}`
   and each string literal = 1 token; `,` `.` `local` `end` and comments are free -> long
   pipe-delimited dialogue strings cost ~1 token.
-- Compressed-size limit (<15,360 bytes) applies only to `.p8.png`/`.p8.rom`, **not**
-  `.p8`.
+- Compressed-size limit (<15,360 bytes) applies only to `.p8.png`/`.p8.rom` **and the html
+  web-player export**, **not** `.p8`. See section 12 - a near-full cart trips it, and the
+  fix is to keep big raw data (the title font) in `__map__`, not in code.
 - `#include` is allowed for authoring; each chapter ships as **its own cart**. Include
   paths resolve **relative to the cart file's folder** (NOT `-root_path`) - section 6.
 - Sprite sheet: tiles 0-31 = our ship art, tiles 32-35/48-51 (rows 2-3) = 16x16 dialogue
   portraits (pilot idx 32, rooke idx 34), written by
-  `python common/tools/gen_gfx.py <cart>.p8`. The map and the rest of the sheet are
-  unused. Colour 0 in sprites is transparent.
+  `python common/tools/gen_gfx.py <cart>.p8`. The rest of the sheet is unused. Colour 0 in
+  sprites is transparent.
+- **Cartridge data sections:** `__map__` holds the 2048-byte custom title font (raw bytes
+  at 0x2000; `01_font.lua` does `memcpy(0x5600,0x2000,2048)` at boot) and `__label__` holds
+  the cartridge label image. Regenerate the map with
+  `python common/tools/gen_fontmap.py <cart>.p8` (source of truth: `common/font_map.hex`).
+  Do NOT use the map region for anything else.
 
 ## 5. PICO-8 Lua dialect - gotchas (read before writing code)
 
@@ -134,7 +140,11 @@ common/src/40_ui.lua        text/center helpers, HUD, radar, ship menu, overlays
 common/src/60_dialogue.lua  portraits + dialogue scene runner (scripts, typewriter, 2 heads)
 common/tools/gen_gfx.py     sprite art -> __gfx__   (python common/tools/gen_gfx.py <cart>.p8)
 common/tools/gen_audio.py   sfx/music   -> __sfx__/__music__
-chapters/ch01/ch01.p8       the cart (thin #include + __gfx__/__sfx__/__music__)
+common/tools/gen_fontmap.py title font  -> __map__   (source: common/font_map.hex)
+common/font_map.hex         the 2048 custom-font bytes (XOR-able; see section 12)
+docs/                       GitHub Pages site (index.html + <chapter>.html/.js)
+build_web.ps1               exports every chapter cart to docs/ for Pages
+chapters/ch01/ch01.p8       the cart (#include + __gfx__/__label__/__map__/__sfx__/__music__)
 chapters/ch01/play.bat      per-chapter launcher
 chapters/ch01/src/50_station.lua docking, services menu, economy actions (ECO table)
 chapters/ch01/src/70_story.lua   chapter flow, cutscenes, quest logic, jump sequence
@@ -199,7 +209,7 @@ exist**; run straight-line and let `-x` report the error with a line number.
 Measure the exact token count with a cart = the same `#include`s + `stop()` + N dummy
 lines `dN=1`. Each dummy is 3 tokens and `stop()` is 2, so real code =
 `reported - 3N - 2`. No overflow means `real <= 8192 - 3N - 2`; raise N until it overflows
-to read the exact figure. Example (current): ch01 = **~7693 / 8192 (~499 free)**.
+  to read the exact figure. Example (current): ch01 = **~7691 / 8192 (~501 free)**.
 
 ## 8. Patterns - DO
 
@@ -345,8 +355,20 @@ to read the exact figure. Example (current): ch01 = **~7693 / 8192 (~499 free)**
 - Keep tunables as named fields (`ECO` in `50_station.lua`, `foes_def` in
   `10_entities.lua`) and mirror `DESIGN.md` rather than inventing numbers.
 
+**Cartridge size & web export (the 15,360-byte limit)**
+- Saving `.p8.png`/`.p8.rom` **and exporting the html web player** require the *compressed*
+  code block < 15,360 bytes (manual 1.5); `.p8` is exempt. Code/strings compress ~2:1, so a
+  ~4 KB high-entropy hex literal is what pushed ch01 over ("failed: code block too large").
+  **Keep big raw data out of code** (the font lives in `__map__`; section 4). The `info()`
+  command prints code/token/compressed sizes.
+- Web build lives in `docs/`: `index.html` + one `<chapter>.html`/`.js` per chapter.
+  Regenerate with `build_web.ps1`. **Export each cart with a bare filename and cwd = `docs/`**
+  (`pico8 -export ch01.html ..\chapters\ch01\ch01.p8`); otherwise the html embeds an absolute
+  `.js` path that breaks on the web. An export also needs a `__label__` section (capture the
+  running screen with `extcmd("label")` then `save`).
+
 **Token budget (HARD 8192, per-chapter cart)**
-- ch01 currently **~7693/8192 (~499 free)**. Every feature added must be offset by
+- ch01 currently **~7691/8192 (~501 free)**. Every feature added must be offset by
   trimming the same cart; each chapter is its own cart, so they do not share the budget.
 - The headless harness's **own code counts** toward the budget, so a normal `_smoke.p8`
   overflows near the limit. Test by temporarily hooking `_init()` (set state / call
@@ -356,6 +378,12 @@ to read the exact figure. Example (current): ch01 = **~7693 / 8192 (~499 free)**
 
 ## 13. Changelog (brief - the full play-by-play lives in git/chat)
 
+- [2026-10-19] **Web build + font-as-data:** the html web-player export failed with
+  "code block too large" - the cart's *compressed* code exceeded the manual's 15,360-byte
+  limit (a 4 KB hex font literal barely compresses). Moved the title font into the cart's
+  unused map region (`common/font_map.hex` -> `__map__` via `gen_fontmap.py`; `01_font.lua`
+  now `memcpy`s it) and captured a `__label__` from the title screen. Added the `docs/`
+  GitHub Pages site (per-chapter web player + `index.html`) and `build_web.ps1`.
 - [2026-10-18] **Ch1 vertical slice** playable: intro (briefing -> Rooke dialogue ->
   fly-into-wormhole -> tunnel -> corrupted terminal) -> flight; mine -> dock -> buy
   hyper-cell -> jump to "Chapter 1 complete". Original sprite art, 2-portrait dialogue
@@ -384,4 +412,4 @@ to read the exact figure. Example (current): ch01 = **~7693 / 8192 (~499 free)**
   death. Cargo 10, hyper-cell 250 (25 ore / 20 ore + 5 kills). Cart ~7772/8192.
 - [2026-10-19] **Dialogue heads:** both portraits always drawn undimmed (no dither overlay,
   no caret arrow); the speaking character is marked only by their highlighted name. Cart
-  ~7693/8192.
+  ~7691/8192.
