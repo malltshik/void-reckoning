@@ -268,7 +268,7 @@ untouched (verified: re-running all three on `ch01.p8` reproduces its data byte-
 
 ```powershell
 & $py common\tools\gen_gfx.py     chapters\ch01\ch01.p8   # __gfx__: ships + portraits (art is ASCII in the script)
-& $py common\tools\gen_audio.py   chapters\ch01\ch01.p8   # __sfx__/__music__ (SFX original, music vendored)
+& $py common\tools\gen_audio.py   chapters\ch01\ch01.p8   # __sfx__/__music__ (SFX + music vendored, CC BY-NC-SA)
 & $py common\tools\gen_fontmap.py chapters\ch01\ch01.p8   # __map__: 2048-byte title font from common/font_map.hex
 ```
 
@@ -295,9 +295,10 @@ starting a chapter, copy the previous cart so the label and data come along.
   (tokens unchanged - verified identical), exports from there, and **fails loudly** if PICO-8 refuses
   ("code block too large" = compressed code > 15,360 bytes) instead of shipping a stale file.
   `p8check.py size ch01` estimates the room left (~4.7k compressed bytes at the handover).
-- **Music licence:** the soundtrack is "Pico-8 Tunes Vol. 1" by Gruber & krajzeg (CC BY-NC-SA,
-  **non-commercial**). Attribution must stay on the title screen and the web page. It **must be
-  replaced** before any paid release (Steam) - see DESIGN section 12/13.
+- **Audio licence:** the soundtrack is "Pico-8 Tunes Vol. 1" by Gruber & krajzeg and the gameplay
+  SFX are Gruber's "Pico-8 SFX Pack!" (both CC BY-NC-SA, **non-commercial**). Attribution (title
+  screen + web page) must stay. Both **must be replaced** before any paid release (Steam) - see
+  DESIGN section 12/13.
 - Third-party carts were studied for reference only (gitignored in `tmp/`); nothing of theirs ships.
 
 ## 12. Starting the next chapter (checklist)
@@ -333,6 +334,13 @@ starting a chapter, copy the previous cart so the label and data come along.
   bundle export mode in `p8check.py`/`build_web.ps1` and the `load()` chaining hook in each chapter.
 ## 14. Changelog (brief - full detail is in git)
 
+- [2026-10-19] **Group SFX vendored.** Gameplay SFX (ids 0-7, 10) are now Gruber's "Pico-8 SFX
+  Pack!" (`tid=34367`, CC BY-NC-SA), replacing the original set; music is unchanged (Gruber &
+  krajzeg). Title + web credit now read "audio:". Deliberately avoided pack #34/#47/#57 (Super Mario
+  Bros recreations) and the thread's Green Hill cover. Tokens unchanged (8130); all 16 shots were
+  pixel-identical (SFX cannot affect rendering). Extracted the pack from its `.p8.png` (the ROM is
+  stored uncompressed, one byte per pixel: `2 bits` of each RGBA channel); `load()` in a headless
+  wrapper silently fails, so don't trust it.
 - [2026-10-19] **Shipping model: multicart.** Ten carts ship as one PICO-8 multicart bundle
   (`EXPORT game.html ch01.p8 ...`; `game.bin` for Steam); chapters chain with `load()`, progress via
   the shared `cartdata("vrk1")` (DESIGN sec13, checklist step 6). Not BBS-compatible. The CC BY-NC-SA

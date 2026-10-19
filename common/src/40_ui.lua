@@ -66,7 +66,7 @@ function draw_title()
  print_title("void reckoning",52,7)
  if hassave then pc(BX.." continue    "..BO.." new game",100,GT)
  elseif frame%40<25 then pc(BX.." begin",100,GT) end
-  pc("music: gruber & krajzeg",120,5)
+  pc("audio: gruber & krajzeg",120,5)
 end
 
 -- ship systems menu (state 8): a 3-item list + a one-entry-at-a-time carousel pane

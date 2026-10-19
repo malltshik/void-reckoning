@@ -75,6 +75,6 @@ how to start the next chapter). The generators re-create a cart's art/audio/font
 ## Credits & license
 
 - Code, art and design: malltshik.
-- Music: **Pico-8 Tunes Vol. 1** by Gruber & krajzeg (CC BY-NC-SA). **Non-commercial.**
+- Music **Pico-8 Tunes Vol. 1** (Gruber & krajzeg) and SFX **Pico-8 SFX Pack** (Gruber); CC BY-NC-SA. **Non-commercial.**
 - Third-party carts were studied for reference only; none of their code or assets ship in
   this game.

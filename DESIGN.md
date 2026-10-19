@@ -257,9 +257,9 @@ negotiation portraits (start as procedural dither-silhouettes; upgrade to real a
 - Tracks (4-channel, from the 64-SFX budget): *Calm Flight*, *Combat*, *Station*, *Dread/Reveal*, *Ending*.
 - SFX list: laser, explosion, thrust, shield hit, hull hit, alarm, comms blip, menu, warp, cargo-open.
 - Generated now; the user may compose the **main theme** later (DAW work → transcribed to PICO-8 patterns).
-- **Licence:** the shipped placeholder soundtrack is "Pico-8 Tunes Vol. 1" by Gruber & krajzeg
-  (CC BY-NC-SA, **non-commercial**). It must be replaced with original/commissioned music before any
-  paid release (Steam).
+- **Licence:** the shipped placeholder soundtrack is "Pico-8 Tunes Vol. 1" by Gruber & krajzeg and
+  the gameplay SFX are Gruber's "Pico-8 SFX Pack!" (both CC BY-NC-SA, **non-commercial**). They must
+  be replaced with original/commissioned audio before any paid release (Steam).
 
 ---
 

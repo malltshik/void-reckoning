@@ -1,9 +1,11 @@
 # Writes the __sfx__ and __music__ sections of a chapter cart. Run from the repo root:
 #   python common/tools/gen_audio.py chapters/ch01/ch01.p8
 # Everything outside those two sections is left untouched.
-# Gameplay SFX (ids 0-10) are original. Music phrases + patterns (sfx ids 20-34,
-# patterns 0-16) are taken verbatim from "Pico-8 Tunes Vol. 1" by Gruber & krajzeg
-# (lexaloffle bbs tid=29008), CC BY-NC-SA, reused with attribution as the authors invite.
+# Gameplay SFX (ids 0-7, 10) come from "Pico-8 SFX Pack!" by Gruber (lexaloffle bbs tid=34367);
+# music phrases + patterns (sfx ids 20-34, patterns 0-16) from "Pico-8 Tunes Vol. 1" by
+# Gruber & krajzeg (lexaloffle bbs tid=29008). Both are CC BY-NC-SA, reused with attribution as
+# the authors invite. Pack #34/#47/#57 (Super Mario Bros recreations) and the Green Hill cover
+# posted in that thread are deliberately NOT used. sfx ids 8/9 are unused placeholders.
 # The attribution must stay visible in-game (title screen) and on the web page.
 # Pattern starts used by the game: 0 = flight, 6 = combat, 10 = station (MUS_* in 00_core.lua).
 import sys
@@ -16,17 +18,18 @@ def sfx_line(speed,notes):
 
 EMPTY="00"*84
 S={}
-S[0]=sfx_line(3,[(48,2,5,3),(43,2,4,3),(38,2,3,3),(33,2,2,3)])            # player laser
-S[1]=sfx_line(4,[(24,1,4,1),(28,1,5,1),(33,1,5,1),(38,1,5,1),(43,1,5,1)]) # missile
-S[2]=sfx_line(6,[(30,6,6,5),(24,6,6,5),(18,6,5,5),(12,6,4,5),(6,6,3,5)])  # explosion
-S[3]=sfx_line(3,[(48,7,5,0),(55,7,6,0),(60,7,6,0)])                       # ore pickup
-S[4]=sfx_line(4,[(20,6,5,3),(14,6,5,3),(10,6,4,3)])                       # player hit
-S[5]=sfx_line(3,[(52,4,4,0),(55,4,3,0)])                                  # ui blip
-S[6]=sfx_line(3,[(43,5,5,0),(48,5,5,0),(55,5,5,0)])                       # dock/confirm
-S[7]=sfx_line(5,[(24,1,5,1),(30,1,5,1),(36,1,5,1),(42,1,5,1),(48,1,6,1),(55,1,6,1)])  # warp
-S[8]=sfx_line(4,[(46,5,4,0),(50,5,4,0)])                                  # message
-S[9]=sfx_line(4,[(26,3,5,0),(0,0,0,0),(0,0,0,0),(26,3,5,0)])              # warning
-S[10]=sfx_line(2,[(57,4,3,0),(53,5,2,0)])                                  # dialogue voice blip
+# --- gameplay SFX vendored from "Pico-8 SFX Pack!" (Gruber, tid=34367, CC BY-NC-SA) ---
+S[0]='000500000c466186660c456186560c446186460c436186360c416186160c406184060040000400004000040000400004000040000400004000040000400004000040000400004000040000400004000040000400'  # laser (pack 29 "Laser")
+S[1]='000100000c1500e0511105114051170511705014051120510f0510c15100100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100'  # missile launch (pack 28 "Throw")
+S[2]='00051c2032251376512a25133641222412e6411b2412564115241216410c2311d631092311963106231166310323112631022310e631012310a63100221086210022104621002210362100211026110021100611'  # explosion (pack 26, Spaceman Splorf)
+S[3]='000100000c0150c0050c005110350c0050c0050c00516055000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005'  # ore pickup (pack 55 "Item Pickup")
+S[4]='000600002336311000103330400010705107031070513005306041070310705000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'  # player hit (pack 62 "Hit")
+S[5]='0002000019045000001e0450000023045000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'  # ui blip (pack 12 "UI Select")
+S[6]='00020000016100d6111c61131611146110c61108611056110261501601016050c600116001a600006000060000600006000060000600006000060000600006000000000000000000000000000000000000000000'  # dock/confirm (pack 17 "Slipways")
+S[7]='000100002b52329543265532555323551215511f5511c5511955118551165511455113541105410d5310b52108521075210551103511025110151102400023000130003400024000140001400024000240001400'  # warp (pack 36 "Shoot", Omega Enforcer)
+S[8]=sfx_line(4,[(46,5,4,0),(50,5,4,0)])                                  # message (unused placeholder)
+S[9]=sfx_line(4,[(26,3,5,0),(0,0,0,0),(0,0,0,0),(26,3,5,0)])              # warning (unused placeholder)
+S[10]='00010000352103751534100371003f10039100331001f1001f1001f1001f100231002a10034100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'  # dialogue voice blip (pack 50 "Text / Dialogue")
 
 # --- Pico-8 Tunes Vol.1 phrases (verbatim) ---
 MUSIC_SFX = [
