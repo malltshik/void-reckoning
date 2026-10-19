@@ -282,10 +282,12 @@ starting a chapter, copy the previous cart so the label and data come along.
 `<chapter>.js` per cart, loaded via `?cart=<chapter>.js` (default `ch01.js`).
 - Regenerate with `powershell -ExecutionPolicy Bypass -File build_web.ps1` and **commit** `docs/*.js`.
   The export embeds the proprietary PICO-8 runtime, so it **cannot run in CI** - local only.
-- Deploy is `.github/workflows/pages.yml`: it uploads the committed `docs/` folder and deploys via
-  the Pages Actions (no PICO-8 needed at deploy time). The repo's Pages **Source must be "GitHub
-  Actions"** (Settings > Pages). It replaced a branch `main`/`/docs` source, which silently stopped
-  publishing (stuck at an old commit while pushes kept landing; branches also throttle ~10 builds/h).
+- Deploy is the standard Pages branch source: `main` / `/docs`, rebuilt on every push. It can
+  **silently stall** - after many rapid pushes (branch builds throttle ~10/h) or during a GitHub
+  incident the `pages build and deployment` runs sit `queued` and the site keeps serving the old
+  commit. Diagnose by comparing the live `docs/*.js`/`index.html` bytes to the commits, or check
+  Settings > Pages and the Actions "pages build and deployment" runs; a stuck queue is GitHub-side,
+  just wait it out (a custom Actions deploy workflow was tried and removed).
 - After a re-export, **bump `p8_cart_ver`** in `docs/index.html` (near the top): the shell appends
   `?v=<n>` to the cart `<script>`, so GitHub Pages / the browser don't keep serving a stale
   `docs/*.js` (Pages caches everything for ~10 min otherwise).
