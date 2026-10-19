@@ -16,7 +16,7 @@
 
 	// bump this every time docs/*.js is re-exported - it cache-busts the cart script so GitHub
 	// Pages / the browser don't keep serving a stale export
-	var p8_cart_ver = 9;
+	var p8_cart_ver = 10;
 
 	// When pico8_state is defined, PICO-8 will set .is_paused, .sound_volume and .frame_number each frame 
 	// (used for determining button icons)
@@ -1013,7 +1013,7 @@ canvas{
   font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 #vr_pill{display:inline-flex;align-items:center;gap:10px;padding:6px 14px;cursor:pointer;
   color:#cfd8e3;background:#131722e6;border:1px solid #232a38;border-radius:999px;
-  font-size:13px;letter-spacing:1px;user-select:none;transition:opacity .25s}
+  font-size:13px;letter-spacing:1px;user-select:none;transition:opacity .25s;width:min(92vw,414px)}
 #vr_pill:hover{border-color:#4aa3c7}
 #vr_pill .t{color:#eef4fb;letter-spacing:3px}
 #vr_pill .c{color:#e0a33a}
@@ -1039,6 +1039,8 @@ canvas{
 #vr_panel .hr b{color:#cfd8e3}
 @media (pointer:coarse){ #vr_bar{left:50%;transform:translateX(-50%)} }
 @media (max-width:560px){ #vr_pill .c,#vr_pill .z{display:none} }
+#vr_meta{color:#7c8797;font-size:11px;margin-top:8px;line-height:1.5;max-width:min(92vw,420px)}
+#vr_bar.run #vr_meta{opacity:.32}
 </style>
 
 </head>
@@ -1050,9 +1052,13 @@ canvas{
 	<div id="vr_pill" role="button" tabindex="0" aria-expanded="false" aria-controls="vr_panel">
 		<span class="t">VOID RECKONING</span>
 		<span class="c">Chapter 1 &middot; Courier 1393</span>
-		<span class="z">&#9662; chapters</span>
+		<span class="z">&#9662;</span>
 	</div>
 	<div id="vr_panel" aria-label="Chapters"></div>
+	<div id="vr_meta">
+		<b>Arrows</b> fly &middot; <b>X</b> fire / confirm / dock &middot; <b>Z</b> missile / cancel &middot; <b>Enter</b> ship menu<br>
+		Audio: &ldquo;Pico-8 Tunes Vol. 1&rdquo; (Gruber &amp; krajzeg) + &ldquo;Pico-8 SFX Pack&rdquo; (Gruber) &mdash; CC BY-NC-SA, non-commercial.
+	</div>
 </div>
 <script type="text/javascript">
 (function(){
@@ -1060,7 +1066,7 @@ canvas{
 		{f:"ch01.js", n:"01", name:"Courier 1393",
 		 desc:"Mine ore, dock the outpost, buy a hyper-cell and jump out."},
 		{f:"ch02.js", n:"02", name:"XR-7PO",
-		 desc:"A stripped archive. Fight for 24 navigation fragments and slice the terminal."},
+		 desc:"Slice sealed relic containers, then crack the archive code."},
 		{f:"ch03.js", n:"03", name:"TBA", desc:"In development.", soon:true}
 	];
 	var cart = (new URLSearchParams(location.search)).get("cart") || "ch01.js";
@@ -1081,12 +1087,6 @@ canvas{
 		b.onclick = function(){ if (c.soon) return; if (c.f !== cart) location.search = "?cart=" + c.f; };
 		panel.appendChild(b);
 	});
-	var hr = document.createElement("div");
-	hr.className = "hr";
-	hr.innerHTML = '<b>Arrows</b> fly &middot; <b>X</b> fire / confirm / dock &middot; ' +
-		'<b>Z</b> missile / cancel &middot; <b>Enter</b> ship menu<br>' +
-		'Audio: \\u201cPico-8 Tunes Vol. 1\\u201d (Gruber &amp; krajzeg) + \\u201cPico-8 SFX Pack\\u201d (Gruber) \\u2014 CC BY-NC-SA, non-commercial.';
-	panel.appendChild(hr);
 	function set_open(o){
 		panel.classList.toggle("open", o);
 		pill.setAttribute("aria-expanded", o ? "true" : "false");

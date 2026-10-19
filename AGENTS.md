@@ -278,7 +278,7 @@ Each chapter cart has its **own** 8192 tokens, but the engine is included in eve
 engine tokens are paid N times: **trimming `common/` is the best investment**, and engine
 additions must be justified. Current figure per chapter is in its own `AGENTS.md`.
 
-Current figures (2026-10-19): **Ch1 = 8065 / 8192 (127 free)**, **Ch2 = 8164 / 8192 (28 free)**.
+Current figures (2026-10-19): **Ch1 = 8065 / 8192 (127 free)**, **Ch2 = 8156 / 8192 (36 free)**.
 The shared engine is ~6.46k, so a chapter gets only ~1.5-1.8k for its own content.
 `50_negotiation.lua` is ~378 tokens and is included only by chapters that use `negs` (no chapter
 does now, so nobody pays for the second pillar). The engine grew ~26 tokens for the per-kind
@@ -386,19 +386,12 @@ starting a chapter, copy the previous cart so the label and data come along.
   chaining hooks are in.
 ## 14. Changelog (brief - full detail is in git)
 
-- [2026-10-19] **XR-7PO redesigned: relic containers + slicing minigame.** Playtest feedback:
-  the wave loop was unwinnable without die-recover cheese, and the counters were noisy. The
-  kill-24-relics grind and the reaver are gone. XR-7PO now hides **5 sealed relic containers**
-  (fixed positions; the white mineable rocks are gone, grey scenery stays). Fly to one, `X slice`
-  -> a timed terminal minigame: a 6x20 stream of random symbols hides exactly one 4-char sequence
-  repeated twice; arrows move a 4-char window (shift 1), X takes it, a wrong pick burns 40 frames.
-  `SLICE_T` shrinks per container (340..100, the archive's terminal 80 = pure reaction). A timeout
-  trips `ALARM`: 3-6 guards spawn and the container stays sealed until they die (kills grant
-  salvage directly - the drop system was cut for tokens). 5 relics -> dock the archive -> the code
-  crack is the same minigame at its hardest -> `qs=4` -> gate. No wave/relic counter text: the
-  radar compass, floating text and the ship-menu inventory carry the info. Engine trims paid for
-  it: `wrap`/`wrap_off` merged (offset-wrap in `00_core`), `draw_term` moved to Ch1. Ch2 = 8164/8192
-  (28 free), Ch1 = 8065 (127 free).
+- [2026-10-19] **XR-7PO bugfix pass (playtest).** Even the easiest slice ran out of time, so the
+  timers are now **10x longer for the first container, 5x for the last** (linear):
+  `SLICE_T={3400,2340,1600,1050,600,400}` frames. A failed slice no longer locks the container or
+  the terminal - the alarm guards hunt you, but you can retry any slip any time (reply to the
+  "must kill guards first" feedback). The web page's CC BY-NC-SA audio attribution (hand-deleted
+  earlier) is restored as a clean static footer. Ch2 = 8156/8192 (36 free), Ch1 = 8065 (127 free).
 
 - [2026-10-19] **Jump gate has its own sprite.** The gate used to share the outpost's
   solar-panel silhouette and read as a station. `gen_gfx.py` now bakes a 16x16 pylon portal

@@ -7,7 +7,7 @@ Story canon/tone: `chapters/ch02/lore.md` (the cart's text is authoritative).
 an earlier plan (Kaelus Prime, negotiation); the built chapter is XR-7PO. Negotiator engine is
 not included (no `negs`).
 
-- **Cart budget:** 8164 / 8192 tokens (28 free), ~43.2k chars. No `50_negotiation.lua` include
+- **Cart budget:** 8156 / 8192 tokens (36 free), ~43.2k chars. No `50_negotiation.lua` include
   (~378 tokens saved). Measure with `p8check tokens ch02`.
 - **Verification:** `p8check all ch02` = tokens + smoke (~35 assertions) + 17 staged screens
   (`tmp/shots/ch02_*.png`) with a text-clipping sweep.
@@ -34,10 +34,12 @@ chapters/ch02/tests/smoke.lua     logic playthrough      chapters/ch02/tests/sho
    2-6) and the radar compass points at the next one in order.
 4. **Slice** (X near a container): the timed terminal minigame - a 6x20 stream of random symbols
    hides exactly one 4-char sequence repeated twice; arrows move the 4-char window (shift 1),
-   `X` takes it, a wrong pick burns 40 frames, `Z` leaves. `SLICE_T` = {340,260,200,150,100} per
-   container. **Success**: `+relic` floating text, +20 fuel, the container goes dark, autosave.
-   **Timeout**: `ALARM` - 3-6 guards spawn (`2+(idx or 4)`, capped 6, lancers from idx 3) and the
-   container stays `hot` (X refused with `GUARDS NEARBY`) until the field is clear.
+   `X` takes it, a wrong pick burns 40 frames, `Z` leaves. `SLICE_T` = {3400,2340,1600,1050,600}
+   per container (10x the first, 5x the last, linear). **Success**: `+relic` floating text, +20
+   fuel, the container goes dark, autosave. **Timeout**: `ALARM` - 3-6 guards spawn
+   (`2+(idx or 4)`, capped 6, lancers from idx 3) and hunt you. **You can retry any container or
+   the terminal any time, even while its guards are up** - `hot` only drives the red blink and is
+   cleared when the field is clear (there is no dock lockout).
 5. **Kill salvage**: `hit_foe` grants fuel +30 / missiles +2 / hull +25 straight off the wreck
    (no drops to chase; the drop system was cut for tokens) and the last kill cools the alarms
    (`GUARDS DOWN`). No bounty, `p.credits=0`.
@@ -70,8 +72,10 @@ are no-ops here.
 
 ## Balance / tunables
 
-- `RELIC_GOAL=5` (70_world); `SLICE_T={340,260,200,150,100,80}` and the 40-frame wrong-pick
-  penalty (73_world's `73_combat.lua`); guards `2+(idx or 4)` capped 6, lancer chance `idx*0.14`.
+- `RELIC_GOAL=5` (70_world); `SLICE_T={3400,2340,1600,1050,600,400}` and the 40-frame wrong-pick
+  penalty (73_combat); guards `2+(idx or 4)` capped 6, lancer chance `idx*0.14`.
+- A failed slice no longer locks the container or the terminal: the alarm guards spawn and keep
+  hunting you, but you may retry at any time. The salvage is the reason to fight them.
 - Container success also grants +20 fuel - the loop stays survivable without ever failing; every
   failed slice costs hull/fuel but the wrecks pay it back. **Feel and difficulty are the user's
   call** (playtest): the last container and the terminal are meant to be near-impossible to read,
@@ -91,8 +95,9 @@ are no-ops here.
 
 - Smoke covers: the warp-in -> signal -> flight handoff, no patrol/no white rocks, no-bounty
   kills with direct salvage, the stream's unique repeated 4-gram, wrong-pick penalty, the key win,
-  the alarm + guards + cool-down, hot refusal, the archive brief -> auto-crack (hardest timer),
-  Z leaving the minigame, death keeping relics, the locked/unlocked gate, seed reproducibility.
+  the alarm + guards + cool-down, **retrying a container while its guards are up**, the archive
+  brief -> auto-crack (hardest timer), Z leaving the minigame, death keeping relics, the
+  locked/unlocked gate, seed reproducibility.
 - **Not done:** carrying relics/credits between chapters; a real `.p8.png` label; audio; a seamless
   Ch1->Ch2 handoff (the bundle still shows the Ch2 title before the warp-in); persisting the
   per-container `sliced`/`hot` flags (a reload re-arms containers; `p.ore` is saved and capped).

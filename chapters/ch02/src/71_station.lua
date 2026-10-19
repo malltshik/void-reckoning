@@ -10,7 +10,6 @@ function nearest_station(range)
 end
 
 function dock(s)
- if s.hot then msg_set("GUARDS NEARBY") return end
  if s.kind=="container" then
   start_slice(s)
   return

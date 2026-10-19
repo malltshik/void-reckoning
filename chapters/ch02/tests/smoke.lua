@@ -102,12 +102,16 @@ ck(#foes>=3,"the alarm brings guards")
 while #foes>0 do hit_foe(1,999) end
 ck(#foes==0 and not stations[3].hot,"killing the guards cools the container down")
 
--- a hot container refuses to open
-p.x=stations[4].x p.y=stations[4].y
-stations[4].hot=true
+-- a hot container can be retried any time; the guards keep hunting instead of blocking
+stations[3].hot=true
+spawn_foe("interceptor",p.x+40,p.y)
+p.x=stations[3].x p.y=stations[3].y
 press(5)
-ck(state==2 and msgt>0,"guards keep you out of a hot container")
-stations[4].hot=nil
+ck(state==4 and mg!=nil,"a failed container can be retried while guards are up")
+press(4)
+ck(state==2,"Z leaves the retried minigame")
+stations[3].hot=nil
+foes={}
 
 -- the archive: the brief, then (with the set complete) the code crack
 foes={}

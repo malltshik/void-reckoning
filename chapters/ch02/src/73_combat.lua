@@ -7,7 +7,9 @@
 -- symbol) and take it before the timer empties. Every container slices faster than the
 -- last; a timeout trips the alarm and the guards come. A wrong pick burns timer instead.
 
-SLICE_T={340,260,200,150,100,80}   -- frames: containers 1-5, then the archive's terminal
+-- frames: containers 1-5, then the archive's terminal. Playtest: even the easiest slice
+-- was too short, so the first is now 10x longer and the hardest 5x, scaled linearly.
+SLICE_T={3400,2340,1600,1050,600,400}
 
 -- stream of 120 symbols (6 rows of 20) with one 4-char run (the key) placed twice: the
 -- key IS a slice of the stream, copied to a second spot further along. The symbol soup
