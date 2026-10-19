@@ -212,7 +212,7 @@ militia (24) already exist in the sheet.
 | Ch | System (working name) | Role | Beat |
 | :-- | :-- | :-- | :-- |
 | **1** | Vector-Alpha | Thaw | Wake adrift post-wormhole; ship AI restates the mission. Tutorial: fly, salvage fuel, first skirmish, dock. Nav data corrupted → hop toward the relay. |
-| **2** | XR-7PO | The archive's dead face | Opens with the Ch1 warp-out, then a red resistance pilot's short hail. A stripped Imperium archive guards **5 sealed relic containers**: fly to one and `X slice` into a timed terminal hack (spot the one 4-symbol sequence that repeats in a stream of noise; every container is faster). A timeout trips an **alarm** - guards come hunting, but you can retry any slice any time. 5 relics -> dock the archive -> the code crack at its hardest -> jump. No ore, no trade; salvage comes straight off wrecks. |
+| **2** | XR-7PO | The archive's dead face | Opens with the Ch1 warp-out, then a red resistance pilot's short hail. A stripped Imperium archive guards **5 sealed relic containers**: fly to one and `X slice` into a timed terminal hack (spot the one 4-symbol sequence that repeats in a stream of noise; every container is faster). Success **collapses** the container; a timeout or abandoning **relocates** it and trips an **alarm** - guards come hunting, and you can retry any time but every failure burns the relic again. 5 relics -> dock the archive -> the code crack at its hardest -> jump. No ore, no trade; salvage comes straight off wrecks. |
 | **3** | Oort-Novex | **Twist 1** | After the objective, a quiet beat: break protocol, open the crate — **empty**. A Resistance agent hails you (the demo's big negotiation). You chase the truth; agent gives **BR-11K0**'s true coordinates with a warning. |
 | **4** | Helios-9 | Doubt | Radiation frontier; the Imperium's orders turn dirty. Witness the machine up close. |
 | **5** | BR-11K0 | **Twist 2** | Reach the dead world: its entire population was exterminated centuries ago to "combat bio-social contamination." You realize *you* are contamination. |
@@ -286,7 +286,7 @@ dozen projectiles/particles. Off-screen sim is not culled (the field is small).
 **Token budget (hard 8,192 per cart) — reality check.** The original plan was an even split across
 systems (flight 450, enemy AI 900, negotiation 700, boss 700, …). As built (2026-10-19), the shared
 engine (`common/src`) is **~6.3k tokens** and every chapter cart pays it again, leaving ~1.5–1.8k for
-chapter content. Measured: **Ch1 = 8,065 / 8,192 (127 free)**, **Ch2 = 8,156 / 8,192 (36 free)**.
+chapter content. Measured: **Ch1 = 8,069 / 8,192 (123 free)**, **Ch2 = 8,147 / 8,192 (45 free)**.
 The negotiation engine is `common/src/50_negotiation.lua` at **~378 tokens**, and it is *optional* -
 only chapters that define `negs` include it (neither current chapter does, so neither pays for the
 second pillar; Ch2 instead redefines the engine's `hit_foe`/`update_drops`/`recover` for its rules).

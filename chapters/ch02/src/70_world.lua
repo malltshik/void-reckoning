@@ -68,10 +68,8 @@ function draw_stations()
    pset(x,y-13,frame%40<20 and 8 or 2)
    print("ARCHIVE",x-14,y-18,GT)
   elseif s.kind=="container" then
-   -- a sealed crate with a lit seam; it goes dark once it is empty
-   rectfill(x-6,y-5,x+6,y+5,1)
+   -- a sealed crate; it collapses (goes dim) once it is empty
    rect(x-6,y-5,x+6,y+5,s.sliced and 6 or 13)
-   line(x-6,y,x+6,y,s.sliced and 6 or 5)
    if not s.sliced then pset(x,y-8,frame%20<10 and (s.hot and 8 or 12) or 1) end
   else
    -- jump gate: two pylons with a shimmering field between them (sprite 40)

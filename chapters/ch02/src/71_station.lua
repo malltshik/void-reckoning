@@ -11,6 +11,7 @@ end
 
 function dock(s)
  if s.kind=="container" then
+  if s.sliced then return end
   start_slice(s)
   return
  end
@@ -43,7 +44,6 @@ function draw_station()
  rect(6,6,121,121,GT)
  if dg then draw_dlg() return end
  print("the archive is silent.",12,26,GT)
- print("it wants its relics.",12,36,GT)
  pc(BO.." undock",112,GT)
 end
 

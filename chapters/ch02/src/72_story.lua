@@ -22,7 +22,6 @@ talks={
  contact={
   NN,
   "INCOMING SIGNAL",
-  "UNREGISTERED CHANNEL",
   RR,
   "courier. surrender your hold.",
   PP,
@@ -50,8 +49,7 @@ end
 function inventory_lines()
  return {"relics "..p.ore.." / "..RELIC_GOAL,
   "missiles "..p.mis.." / "..p.mmis,
-  "hull "..flr(p.hp).." / "..p.mhp,
-  "fuel "..flr(p.fuel).." / "..p.mfuel}
+  "hull "..flr(p.hp).." / "..p.mhp}
 end
 
 -- warp in from Chapter 1: the recap and the new goal. Keep lines <= 31 chars.

@@ -278,7 +278,7 @@ Each chapter cart has its **own** 8192 tokens, but the engine is included in eve
 engine tokens are paid N times: **trimming `common/` is the best investment**, and engine
 additions must be justified. Current figure per chapter is in its own `AGENTS.md`.
 
-Current figures (2026-10-19): **Ch1 = 8065 / 8192 (127 free)**, **Ch2 = 8156 / 8192 (36 free)**.
+Current figures (2026-10-19): **Ch1 = 8069 / 8192 (123 free)**, **Ch2 = 8147 / 8192 (45 free)**.
 The shared engine is ~6.46k, so a chapter gets only ~1.5-1.8k for its own content.
 `50_negotiation.lua` is ~378 tokens and is included only by chapters that use `negs` (no chapter
 does now, so nobody pays for the second pillar). The engine grew ~26 tokens for the per-kind
@@ -386,12 +386,20 @@ starting a chapter, copy the previous cart so the label and data come along.
   chaining hooks are in.
 ## 14. Changelog (brief - full detail is in git)
 
-- [2026-10-19] **XR-7PO bugfix pass (playtest).** Even the easiest slice ran out of time, so the
-  timers are now **10x longer for the first container, 5x for the last** (linear):
-  `SLICE_T={3400,2340,1600,1050,600,400}` frames. A failed slice no longer locks the container or
-  the terminal - the alarm guards hunt you, but you can retry any slip any time (reply to the
-  "must kill guards first" feedback). The web page's CC BY-NC-SA audio attribution (hand-deleted
-  earlier) is restored as a clean static footer. Ch2 = 8156/8192 (36 free), Ch1 = 8065 (127 free).
+- [2026-10-19] **Abandoning a slice blows the relic too; the key never straddles a row.**
+  Z-exit used to be free, so the timer could be cheesed (leave at the last second, re-enter full).
+  Exit now runs the same `fail_slice` as a timeout: alarm, guards, and for a container a fresh
+  random relocation. `gen_buf` also guarantees both key copies sit fully inside one 20-char row
+  (the 4-symbol window can no longer wrap across a line break). Ch2 = 8147/8192 (45 free).
+
+- [2026-10-19] **Containers collapse on success, relocate on failure.** A sliced container could
+  be re-opened (and re-grant relics); `dock` now refuses sliced containers and the engine's dock
+  prompt is suppressed for them (`not st.sliced`), so a cleared container reads as collapsed.
+  Failing one destroys it and drops it at a fresh random spot (`relocate`), so the relic is
+  always findable on the radar; the archive stays put. Also fixed a latent crash: failing the
+  archive's crack used `s.idx*0.14` with `idx=nil`. Wrong picks now just buzz (the huge timers
+  made the 40-frame penalty moot) and the entry-input lock was cut for tokens. Ch2 = 8123/8192
+  (69 free), Ch1 = 8069 (123 free).
 
 - [2026-10-19] **Jump gate has its own sprite.** The gate used to share the outpost's
   solar-panel silhouette and read as a station. `gen_gfx.py` now bakes a 16x16 pylon portal

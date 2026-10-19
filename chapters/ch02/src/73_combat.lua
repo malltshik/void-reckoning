@@ -5,7 +5,7 @@
 -- THE SLICING MINIGAME: a stream of random symbols hides exactly one 4-char sequence that
 -- appears twice. Find it, move the 4-char window over either copy (arrows shift by one
 -- symbol) and take it before the timer empties. Every container slices faster than the
--- last; a timeout trips the alarm and the guards come. A wrong pick burns timer instead.
+-- last; a timeout trips the alarm and the guards come; a wrong pick just buzzes.
 
 -- frames: containers 1-5, then the archive's terminal. Playtest: even the easiest slice
 -- was too short, so the first is now 10x longer and the hardest 5x, scaled linearly.
@@ -18,8 +18,12 @@ SLICE_T={3400,2340,1600,1050,600,400}
 function gen_buf()
  local b=""
  for i=1,120 do b..=chr(35+flr(rnd(36))) end
- local p=1+flr(rnd(56))
- local q=p+4+flr(rnd(57))
+ -- both copies of the key sit fully inside one 20-char row
+ local c=1+flr(rnd(17))
+ local rp=flr(rnd(5))
+ local rq=rp+1+flr(rnd(5-rp))
+ local p=rp*20+c
+ local q=rq*20+c
  local k=sub(b,p,p+3)
  return sub(b,1,p-1)..k..sub(b,p+4,q-1)..k..sub(b,q+4),k
 end
@@ -28,33 +32,40 @@ end
 function start_slice(s)
  local tm=SLICE_T[s.idx or 6]
  local b,k=gen_buf()
- mg={s=s,buf=b,key=k,pos=1,t=tm,tm=tm,lock=14}
+ mg={s=s,buf=b,key=k,pos=1,t=tm,tm=tm}
  state=4
- set_music(MUS_STATION)
  sfx(10,2)
+end
+
+-- drop a container at a fresh random spot inside the disc
+function relocate(s)
+ local a=rnd(1)
+ s.x,s.y=clamp_arena(ARX+cos(a)*(120+rnd(200)),ARY+sin(a)*(120+rnd(200)),40)
+end
+
+-- a timed-out or abandoned slice trips the alarm: the relic blows and, for a container,
+-- turns up somewhere else (the archive stays put)
+function fail_slice()
+ local s=mg.s
+ mg=nil
+ if s.kind=="container" then relocate(s) end
+ s.hot=true
+ msg_set("ALARM")
+ sfx(7,2)
+ for i=1,min(2+(s.idx or 4),6) do
+  local a=rnd(1)
+  spawn_foe(rnd(1)<(s.idx or 4)*0.14 and "lancer" or "interceptor",clamp_arena(p.x+cos(a)*100,p.y+sin(a)*100,24))
+ end
+ state=2
 end
 
 function update_mg()
  mg.t-=1
- if mg.t<1 then
-  -- timeout: the alarm trips, the guards come, the container stays sealed till they die
-  local s=mg.s
-  mg=nil
-  s.hot=true
-  msg_set("ALARM")
-  sfx(7,2)
-  for i=1,min(2+(s.idx or 4),6) do
-   local a=rnd(1)
-   spawn_foe(rnd(1)<s.idx*0.14 and "lancer" or "interceptor",clamp_arena(p.x+cos(a)*100,p.y+sin(a)*100,24))
-  end
-  state=2
-  return
- end
- if mg.lock>0 then mg.lock-=1 end
+ if mg.t<1 then fail_slice() return end
  for i=0,3 do
   if btnp(i) then mg.pos=mid(1,mg.pos+({-1,1,-20,20})[i+1],117) end
  end
- if mg.lock<1 and btnp(BY) then
+ if btnp(BY) then
   if sub(mg.buf,mg.pos,mg.pos+3)==mg.key then
    -- the key: a container gives up its relic, the archive gives up the coordinates
    local s=mg.s
@@ -74,12 +85,10 @@ function update_mg()
    save_game()
    state=2
   else
-   mg.t=max(1,mg.t-40)
    sfx(2,1)
   end
  elseif btnp(BN) then
-  mg=nil
-  state=2
+  fail_slice()
  end
 end
 
@@ -91,7 +100,6 @@ function draw_mg()
   print(sub(mg.buf,1+r*20,20+r*20),24,32+r*8,5)
  end
  local x,y=24+(mg.pos-1)%20*4,32+(mg.pos-1)\20*8
- rect(x-1,y-1,x+16,y+6,12)
  print(sub(mg.buf,mg.pos,mg.pos+3),x,y,7)
  pc("ARROWS MOVE  X TAKE  Z LEAVE",112,GT)
 end

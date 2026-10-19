@@ -7,7 +7,7 @@ Story canon/tone: `chapters/ch02/lore.md` (the cart's text is authoritative).
 an earlier plan (Kaelus Prime, negotiation); the built chapter is XR-7PO. Negotiator engine is
 not included (no `negs`).
 
-- **Cart budget:** 8156 / 8192 tokens (36 free), ~43.2k chars. No `50_negotiation.lua` include
+- **Cart budget:** 8147 / 8192 tokens (45 free), ~43.4k chars. No `50_negotiation.lua` include
   (~378 tokens saved). Measure with `p8check tokens ch02`.
 - **Verification:** `p8check all ch02` = tokens + smoke (~35 assertions) + 17 staged screens
   (`tmp/shots/ch02_*.png`) with a text-clipping sweep.
@@ -33,13 +33,15 @@ chapters/ch02/tests/smoke.lua     logic playthrough      chapters/ch02/tests/sho
    reinforcement loop spawns nothing). Five **sealed relic containers** (fixed positions, stations
    2-6) and the radar compass points at the next one in order.
 4. **Slice** (X near a container): the timed terminal minigame - a 6x20 stream of random symbols
-   hides exactly one 4-char sequence repeated twice; arrows move the 4-char window (shift 1),
-   `X` takes it, a wrong pick burns 40 frames, `Z` leaves. `SLICE_T` = {3400,2340,1600,1050,600}
-   per container (10x the first, 5x the last, linear). **Success**: `+relic` floating text, +20
-   fuel, the container goes dark, autosave. **Timeout**: `ALARM` - 3-6 guards spawn
-   (`2+(idx or 4)`, capped 6, lancers from idx 3) and hunt you. **You can retry any container or
-   the terminal any time, even while its guards are up** - `hot` only drives the red blink and is
-   cleared when the field is clear (there is no dock lockout).
+   hides exactly one 4-char sequence repeated twice (both copies always sit fully inside one
+   20-char row - the window never straddles a line break); arrows move the 4-char window
+   (shift 1), `X` takes it (a wrong pick just buzzes), `Z` abandons. `SLICE_T` =
+   {3400,2340,1600,1050,600} per container (10x the first, 5x the last, linear). **Success**: the
+   container **collapses** (unenterable, dim), +relic floating text, +20 fuel, autosave.
+   **Timeout or abandon**: `fail_slice()` - `ALARM`, 3-6 guards spawn (`2+(idx or 4)`, capped 6,
+   lancers from idx 3), and a container is **relocated** to a fresh random spot (findable on the
+   radar); the archive itself stays put. There is no dock lockout: retry any time, but every
+   attempt that ends (timeout or exit) burns the relic once more.
 5. **Kill salvage**: `hit_foe` grants fuel +30 / missiles +2 / hull +25 straight off the wreck
    (no drops to chase; the drop system was cut for tokens) and the last kill cools the alarms
    (`GUARDS DOWN`). No bounty, `p.credits=0`.
