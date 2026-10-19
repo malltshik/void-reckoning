@@ -28,7 +28,7 @@ chapter** (Ch1-10), one cart per chapter, no pre-declared parts. Story milestone
 twist (the sealed cargo is empty), **Ch6** the fork (defect or die loyal), **Ch10** the Paragon.
 
 **Status:** Chapter 1 is a complete, playable vertical slice (intro -> mine -> dock -> buy
-hyper-cell -> jump -> ending, with save/continue and death-respawn). Chapters 2-10 and the
+hyper-cell -> jump -> warp finale, with save/continue and death-respawn). Chapters 2-10 and the
 docked negotiation layer are not built (Ch2 has a lore stub only).
 
 Doc map: `README.md` (public face) - `DESIGN.md` (full design + as-built numbers) -
@@ -94,7 +94,7 @@ time): `00 01 10 20 30 40 60` (engine) then the chapter's `70 71 72 ...`.
 
 **State machine** (`state`, dispatched in `_update`/`_draw` of `00_core.lua`; add new states
 to **both**): `0` title - `1` story/cutscene - `2` flight - `4` station - `5` jump/warp -
-`6` game over - `7` ending - `8` ship menu. (`3` comms/negotiation is reserved, unbuilt.)
+`6` game over - `8` ship menu. (`3` comms/negotiation and `7` are reserved, unbuilt.)
 
 **Chapter contract** - what the engine expects a chapter to define (all in `chapters/<ch>/src`):
 
@@ -104,7 +104,7 @@ to **both**): `0` title - `1` story/cutscene - `2` flight - `4` station - `5` ju
 | World hooks | `ch_stations()` (adds authored stations; first one is the respawn/continue dock), `ch_foes()` (opening patrol; called last so seeded RNG order stays stable), `objective()` (radar compass target), `draw_stations()` |
 | Station (state 4) | `nearest_station(range)`, `dock(s)`, `update_station()`, `draw_station()` |
 | Story (state 1) | `init_story()`, `start_story()`, `update_story()`, `draw_story()`, `mission_lines()`, `inventory_lines()` |
-| Jump / ending (5, 7) | `start_jump()`, `update_jump()`, `draw_jump()`, `draw_ending()` |
+| Jump / warp (5) | `start_jump()`, `update_jump()`, `draw_jump()` |
 | Engine-owned story globals the chapter may use | `qs` (quest stage), `ohint` (mission hint unlocked) - both persisted by `save_game` |
 
 **Key globals:** `p` (player), `foes roids drops bullets missiles parts blasts floats planets
@@ -195,7 +195,7 @@ DON'T
 $py = "C:\Users\Artem Gavrilov\AppData\Local\Python\bin\python.exe"
 & $py common\tools\p8check.py tokens ch01   # exact token count + headroom
 & $py common\tools\p8check.py smoke  ch01   # scripted playthrough, asserts on game state
-& $py common\tools\p8check.py shots  ch01   # 17 screens -> tmp\shots\ch01_*.png, + text-clipping sweep
+& $py common\tools\p8check.py shots  ch01   # 16 screens -> tmp\shots\ch01_*.png, + text-clipping sweep
 & $py common\tools\p8check.py all    ch01   # all three (exit code 1 on any failure)
 & $py common\tools\p8check.py size   ch01   # compressed-code headroom for the web export (~4.7k bytes left)
 & $py common\tools\p8check.py export ch01   # comment-stripped web export -> docs\ch01.js (build_web.ps1 does this)
@@ -215,7 +215,7 @@ $py = "C:\Users\Artem Gavrilov\AppData\Local\Python\bin\python.exe"
   logs any string that would run off the 128px screen (skipped in flight).
 - **Before/after proofs:** run `shots`, copy `tmp/shots/<ch>_dump.txt` aside, change code, re-run,
   `shotdiff.py`. The fade rewrite (-112 tokens, far less CPU) and the engine/chapter split were
-  verified this way: 0 px different on all 17 screens.
+  verified this way: 0 px different on all screens.
 - Adding coverage: append `ck(...)` lines to `tests/smoke.lua` (`press(5)` = X, `hold(1,30)` =
   hold right 30 frames; arrows are 0-3 L/R/U/D, Z=4, X=5, Enter=6) or stage a new scene in
   `tests/shots.lua`. Teleport/poke state freely - it is a test.
@@ -233,7 +233,8 @@ $py = "C:\Users\Artem Gavrilov\AppData\Local\Python\bin\python.exe"
   (left/right cycle entries), Z returns, EXIT saves and quits to the title.
   `poke(0x5f30,1)` each held frame suppresses PICO-8's own pause menu.
 - Title: X begin/continue, Z new game (only when a save exists). Station: up/down + X, Z undocks.
-  Game over (X = recover) / ending (X = back to title) honour a short input lockout (`got`).
+  Game over (X = recover) honours a short input lockout (`got`); the warp finale returns to the
+  title on X.
 - **HUD** (`40_ui.lua`): four even bars - HP/SH left, FU/CG right (`hbar`, colour is the only
   difference) - plus credits (`$n`, top right) and a missile icon + count (green = loaded,
   red = empty). The radar compass needle is the only objective guidance; flight messages are
@@ -250,9 +251,9 @@ Each chapter cart has its **own** 8192 tokens, but the engine is included in eve
 engine tokens are paid N times: **trimming `common/` is the best investment**, and engine
 additions must be justified. Current figure per chapter is in its own `AGENTS.md`.
 
-Where the tokens are (2026-10-19, Ch1 = 8035): engine **6276** (`10_entities` 1699, `40_ui` 1199,
-`20_world` 1091, `00_core` 910, `30_combat` 844, `60_dialogue` 528) + chapter content **~1760**
-(`72_story` 945, `71_station` 515, `70_world` 299). So a new chapter has only ~1.9k tokens for
+Where the tokens are (2026-10-19, Ch1 = 8018): engine **6307** (`10_entities` 1699, `40_ui` 1199,
+`20_world` 1088, `00_core` 944, `30_combat` 844, `60_dialogue` 528) + chapter content **~1711**
+(`72_story` 897, `71_station` 515, `70_world` 299). So a new chapter has only ~1.9k tokens for
 its own content, and the unbuilt negotiation layer / boss will not fit without trimming the
 engine or leaving unused subsystems out of a chapter's `#include` list (DESIGN section 13). If you are out of room: measure first (`p8check tokens`), then look for
 duplicated helpers (`wrap` vs `wrap_off`), one-use locals, and defaults for params every caller
@@ -320,6 +321,11 @@ starting a chapter, copy the previous cart so the label and data come along.
 - **Open design question:** how progress crosses chapter carts (checklist step 6 above).
 ## 14. Changelog (brief - full detail is in git)
 
+- [2026-10-19] **Playtest fixes:** full cargo no longer magnetises ore; REFUEL is partial when short
+  on cash; reinforcements arrive as a 3-5 patrol (`FOE_CAP` 4 -> 8) so loitering is dangerous; each
+  new game gets a per-run layout (`SEED`, saved with the run so continue = same system); the
+  "chapter complete" screen was cut - the warp cutscene is the finale (Ch2 reuses it, new text:
+  `chapters/ch02/AGENTS.md`).
 - [2026-10-19] **Web export now strips comments** (`p8check export`): after the handover docs/comments
   grew the sources, the unstripped cart exceeded the 15,360-byte compressed limit and `build_web` failed.
   Stripping is token-neutral and leaves ~4.7k compressed bytes of headroom.

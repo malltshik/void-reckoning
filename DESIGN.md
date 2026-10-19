@@ -262,7 +262,7 @@ negotiation portraits (start as procedural dither-silhouettes; upgrade to real a
 ## 13. Technical architecture
 
 **States:** `0 Title · 1 Prologue/Cutscene · 2 Flight · 3 Comms/negotiation (reserved, unbuilt) ·
-4 Station · 5 Jump/Route · 6 Game Over · 7 Ending · 8 Ship menu`.
+4 Station · 5 Jump/Route · 6 Game Over · 8 Ship menu`.
 
 **Entity model:** flat pooled tables with swap-remove; overflow-safe distance collision (axis-guard
 before squaring — see AGENTS.md §5: 16.16 fixed point overflows past ~181px); no spatial hash.
@@ -272,14 +272,14 @@ dozen projectiles/particles. Off-screen sim is not culled (the field is small).
 
 **Token budget (hard 8,192 per cart) — reality check.** The original plan was an even split across
 systems (flight 450, enemy AI 900, negotiation 700, boss 700, …). As built, the **engine alone
-(`common/src`) costs 6,243 tokens** and every chapter cart pays it again; Chapter 1's own content is
-~1,740 tokens (world 299 · station 494 · story 945), total 7,981 → **~210 free**.
+(`common/src`) costs 6,307 tokens** and every chapter cart pays it again; Chapter 1's own content is
+~1,711 tokens (world 299 · station 515 · story 897), total 8,018 → **~174 free**.
 
 | Engine file | Tokens |
 | :-- | --: |
-| `00_core` (init/save/state machine/helpers) | 910 |
-| `10_entities` (flight sim, foes, rocks, drops, damage) | 1,666 |
-| `20_world` (system gen, flight drawing, fade) | 1,091 |
+| `00_core` (init/save/state machine/helpers) | 944 |
+| `10_entities` (flight sim, foes, rocks, drops, damage) | 1,699 |
+| `20_world` (system gen, flight drawing, fade) | 1,088 |
 | `30_combat` (guns, missiles, collisions) | 844 |
 | `40_ui` (menus, HUD, radar, title) | 1,199 |
 | `60_dialogue` (portrait dialogue runner) | 528 |
@@ -306,7 +306,7 @@ common/tools/               # p8check.py (tokens/smoke/shots), shotdiff.py, harn
 chapters/ch01/ch01.p8       # thin cart: #include lines + gfx/label/map/sfx/music data
 chapters/ch01/src/70_world.lua    # stations/foes hooks, enemy roster, station drawing
 chapters/ch01/src/71_station.lua  # dock services, economy
-chapters/ch01/src/72_story.lua    # dialogue scripts, quests, cutscenes, warp, ending
+chapters/ch01/src/72_story.lua    # dialogue scripts, quests, cutscenes, warp (the finale)
 chapters/ch01/tests/              # smoke.lua + shots.lua drivers for p8check
 docs/  build_web.ps1              # Pages player: index.html shell + <ch>.js per cart
 tmp/                              # gitignored local scratch (research, screenshots)
@@ -331,7 +331,7 @@ Continue always resumes docked at the outpost. Upgrade tiers and the dialogue bi
 come; a cart only continues a save tagged with its own `CHAPTER`.)*
 
 **Test loop:** `python common/tools/p8check.py all ch01` — exact token count, a scripted headless
-playthrough (40+ assertions on the real game logic), and 17 staged screenshots with a text-clipping
+playthrough (40+ assertions on the real game logic), and 16 staged screenshots with a text-clipping
 sweep (the agent can read the PNGs). The user still does interactive playtests for feel/balance;
 audio is untested by tooling. See `AGENTS.md` §7.
 

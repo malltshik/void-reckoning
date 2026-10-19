@@ -167,7 +167,7 @@ tick(200)
 press(5)
 ck(state==2,"recovered after dying in dead space")
 
--- jump + ending + reset
+-- jump + chapter end (the warp cutscene is the finale; X returns to the title)
 p.x=g.x p.y=g.y
 press(5)
 ck(state==5,"X at the gate with a cell starts the warp")
@@ -175,9 +175,17 @@ for i=1,40 do
  if state!=5 then break end
  press(5)
 end
-ck(state==7,"the warp narration ends the chapter")
-tick(200)
-press(5)
-ck(state==0 and not hassave and dget(8)==0,"the ending resets to the title")
+ck(state==0 and not hassave and dget(8)==0,"finishing the warp resets to the title")
+
+-- layout varies per run but a given seed rebuilds it exactly (continue = same system)
+local s0=SEED
+local k0=0 for r in all(roids) do k0+=flr(r.x) end
+reset_game()
+ck(SEED!=s0,"a new game picks a fresh layout seed")
+local k1=0 for r in all(roids) do k1+=flr(r.x) end
+ck(k1!=k0,"the layout actually differs between seeds")
+SEED=s0 load_system()
+local k2=0 for r in all(roids) do k2+=flr(r.x) end
+ck(k2==k0,"the saved seed rebuilds the same map")
 
 finish("SMOKE")

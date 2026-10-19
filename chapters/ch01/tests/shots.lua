@@ -102,14 +102,12 @@ snap("warp",100)
 jt=400
 snap("warp_end",10)
 
--- game over + ending
+-- game over
 state=2
 cam()
 tick(4)
 state=6 dth="KILLED BY PIRATES" got=0
 boom_big(p.x,p.y)
 snap("game_over",8)
-state=7 got=0
-snap("ending",5)
 
 finish("SHOTS")

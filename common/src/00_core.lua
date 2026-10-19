@@ -24,21 +24,30 @@ ARX=256
 ARY=256
 ARR=380
 
--- states: 0 title, 1 story, 2 flight, 4 station, 5 jump, 6 gameover, 7 ending, 8 menu
+-- states: 0 title, 1 story, 2 flight, 4 station, 5 jump, 6 gameover, 8 menu
 function _init()
  cartdata("vrk1")
  mtrack=-1
  mtcombat=false
  set_music(MUS_FLIGHT)
  frame=0
+ hassave=(dget(8)==1 and dget(0)==CHAPTER)
+ local s=flr(dget(6))
+ SEED=(hassave and s>0) and s or next_seed()
  new_game()
- hassave=load_game()
+ if hassave then load_game() end
+end
+
+-- fresh layout seed per new game; saved so "continue" rebuilds the same system
+function next_seed()
+ dset(6,dget(6)+1)
+ return 1000+CHAPTER+flr(dget(6))*7919
 end
 
 -- a fresh run in memory (never touches the save)
 function new_game()
  init_player()
- load_system(CHAPTER)
+ load_system()
  init_story()
  state=0
 end
@@ -59,8 +68,9 @@ function init_player()
  msgt=0
 end
 
--- "new game" from the title / after the ending: also forget the save
+-- "new game" from the title / after the ending: a new layout and forget the save
 function reset_game()
+ SEED=next_seed()
  new_game()
  hassave=false
  dset(8,0)
@@ -69,10 +79,10 @@ end
 -- progress persists in the cartdata slots (DESIGN section 13): qs/ohint/credits/ore/
 -- missiles. Saved on dock, on jump and on quit; loaded once at boot. A save always
 -- resumes docked at the outpost (`active`, set by load_system). Slot map: 0 chapter,
--- 1 qs, 2 ohint, 3 credits, 4 ore, 5 missiles, 8 "a save exists".
+-- 1 qs, 2 ohint, 3 credits, 4 ore, 5 missiles, 6 layout seed, 8 "a save exists".
 function save_game()
  dset(0,CHAPTER) dset(1,qs) dset(2,ohint and 1 or 0)
- dset(3,p.credits) dset(4,p.ore) dset(5,p.mis) dset(8,1)
+ dset(3,p.credits) dset(4,p.ore) dset(5,p.mis) dset(6,SEED) dset(8,1)
  hassave=true
 end
 
@@ -205,9 +215,6 @@ function _update()
   update_fx()
   if got>0 then got-=1
   elseif btnp(4) or btnp(5) then recover() end
- elseif state==7 then
-  if got>0 then got-=1
-  elseif btnp(4) or btnp(5) then reset_game() end
  end
 end
 
@@ -222,6 +229,5 @@ function _draw()
  elseif state==5 then draw_jump()
  elseif state==8 then draw_menu()
  elseif state==6 then draw_gameover()
- elseif state==7 then draw_ending()
  end
 end

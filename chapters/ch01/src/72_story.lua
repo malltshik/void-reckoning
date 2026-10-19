@@ -195,8 +195,8 @@ jlines={
 function update_jump()
  jt+=1
  if btnp(4) or btnp(5) then
-  -- X skips the reveal; once every line is shown, X ends the chapter
-  if jt>#jlines*JPER then state=7 got=180 save_game() else jt=#jlines*JPER+1 end
+  -- X skips the reveal; once every line is shown, X ends the chapter back at the title
+  if jt>#jlines*JPER then reset_game() else jt=#jlines*JPER+1 end
  end
 end
 
@@ -214,12 +214,4 @@ function draw_jump()
   print(k,flr((128-sw(k))/2),12+(i-1)*11,7)
  end
  if jt>#jlines*JPER and frame%40<25 then pc(BX.." continue",118,GT) end
-end
-
-function draw_ending()
- pc("CHAPTER 1 COMPLETE",48,GT)
- pc("THE CRATE AWAITS.",64,GT)
- pc("TO BE CONTINUED",82,GT)
- if got>0 then pc("STANDBY...",106,GT)
- elseif frame%40<25 then pc("press "..BX,106,GT) end
 end

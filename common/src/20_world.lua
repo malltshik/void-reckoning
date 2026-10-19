@@ -16,9 +16,10 @@ end
 
 -- build a system: the chapter authors the skeleton (ch_stations, ch_foes - see
 -- chapters/<ch>/src/70_world.lua); planets and rocks are seeded dressing around it.
--- The RNG call order is part of the layout: do not reorder without re-checking the map.
-function load_system(id)
- srand(1000+id)
+-- The layout seed (`SEED`) is picked per new game and saved, so a continue rebuilds the
+-- same map. The RNG call order is part of the layout: do not reorder it.
+function load_system()
+ srand(SEED)
  planets={} stations={} roids={} foes={} drops={} bullets={} missiles={} parts={} blasts={} floats={}
  ch_stations()
  active=stations[1] -- the dock you respawn / continue at
@@ -55,7 +56,7 @@ function load_system(id)
  p.dy=0
  spawnt=SPAWN_MIN
  roidt=ROID_RESPAWN
- srand(9000+id)
+ srand(SEED+8000)
  ne_stars()
 end
 -- parallax starfield: one fixed pool, tiled with a screen-space modulo so a few
