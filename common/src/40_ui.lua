@@ -64,7 +64,9 @@ function draw_title()
  circfill(50,104,12,2)
  circfill(84,60,8,2)
  print_title("void reckoning",52,7)
- if frame%40<25 then pc(BX.." begin",100,GT) end
+ if hassave then pc(BX.." continue    "..BO.." new game",100,GT)
+ elseif frame%40<25 then pc(BX.." begin",100,GT) end
+ print("music: gruber & krajzeg",42,120,5)
 end
 
 -- ship systems menu (state 8): a 3-item list + a one-entry-at-a-time carousel pane
@@ -72,7 +74,7 @@ function open_menu()
  mm=menu_new("",{
   {label="MISSIONS",lines=mission_lines()},
   {label="INVENTORY",lines=inventory_lines()},
-  {label="EXIT",lines={"quit to the title page."},act=function() state=0 end}
+  {label="EXIT",lines={"save and quit to the title page."},act=function() save_game() state=0 end}
  })
  state=8
  sfx(5,3)
@@ -109,20 +111,30 @@ function draw_menu()
  pc(BX.." select  "..BO.." exit",112,GT)
 end
 
--- one HUD bar: 2-char label + a 40x4 trough + a coloured fill (all bars identical
+-- one HUD bar: 2-char label + an w x 4 trough + a coloured fill (all bars identical
 -- size, colour is the only difference). bx/by = top-left of the trough.
-function hbar(l,bx,by,v,mv,c)
+function hbar(l,bx,by,w,v,mv,c)
  print(l,bx-10,by-1,GT)
- rectfill(bx,by,bx+39,by+3,2)
- rectfill(bx,by,bx+flr(v/mv*39),by+3,c)
+ rectfill(bx,by,bx+w-1,by+3,2)
+ rectfill(bx,by,bx+flr(v/mv*(w-1)),by+3,c)
+end
+
+-- tiny missile glyph (a 2x4 bar): red when out of rockets, green otherwise
+function misicon(x,y,c)
+ rectfill(x,y,x+1,y+3,c)
 end
 
 function draw_hud()
  rectfill(0,0,127,13,1)
- hbar("HP",11,1,p.hp,p.mhp,11)
- hbar("SH",11,7,p.shd,p.mshd,12)
- hbar("FU",63,1,p.fuel,p.mfuel,9)
- hbar("CG",63,7,p.ore,p.mcargo,10)
+ hbar("HP",11,1,42,p.hp,p.mhp,11)
+ hbar("SH",11,7,42,p.shd,p.mshd,12)
+ hbar("FU",66,1,42,p.fuel,p.mfuel,9)
+ hbar("CG",66,7,42,p.ore,p.mcargo,10)
+ local s="$"..p.credits
+ print(s,127-sw(s),0,10)
+ local mc=p.mis>0 and 11 or 8
+ misicon(111,7,mc)
+ print(p.mis,116,7,mc)
 end
 
 -- plot a world point on the round radar, clamped to the rim so off-system (dead
@@ -154,8 +166,7 @@ function draw_radar()
  if arena_dist(p.x,p.y)>ARR then pc2=8 end
  rplot(cx,cy,rr,sc,p.x,p.y,pc2)
  -- compass needle: an arrow just OUTSIDE the ring pointing at the current objective
- local tgt=stations[1]
- if qs>=3 then tgt=stations[2] end
+ local tgt=stations[qs>=3 and 2 or 1]
  if tgt then
   local a=atan2(tgt.x-p.x,tgt.y-p.y)
   local tx=cx+cos(a)*(rr+4)
@@ -184,7 +195,7 @@ function draw_gameover()
  if got>0 then
   pc("STANDBY...",88,GT)
  else
-  if frame%40<25 then pc("press "..BX.." to retry",92,GT) end
+  if frame%40<25 then pc("press "..BX.." to recover",92,GT) end
  end
 end
 
@@ -192,5 +203,6 @@ function draw_ending()
  pc("CHAPTER 1 COMPLETE",48,GT)
  pc("THE CRATE AWAITS.",64,GT)
  pc("TO BE CONTINUED",82,GT)
- if frame%40<25 then pc("press "..BX,106,GT) end
+ if got>0 then pc("STANDBY...",106,GT)
+ elseif frame%40<25 then pc("press "..BX,106,GT) end
 end

@@ -10,6 +10,11 @@ system, and negotiation when you dock. Dark sci-fi tone.
 sell, buy a hyper-cell, jump out. The game is released chapter by chapter; Chapters 2–10
 and the docked negotiation layer are not built yet.
 
+Progress autosaves on dock, on jump and on quit; the title offers **continue / new game**.
+Dying respawns you at the last dock for a 25% fee and your cargo — the story never resets.
+The flight HUD shows HP/shield/fuel/cargo bars, plus your credits and missile count
+(missile icon: green = loaded, red = empty).
+
 ## Controls
 
 | Input | Action |

@@ -117,6 +117,8 @@ Fuel 100/100 (thrust **0.06/f**, doubled 2026-10-19) · Missiles 10/10 · Credit
 - **On death:** respawn at the last docked station; lose the **cargo hold** + a **recovery fee**
   (~20–25% of credits, or a flat scaled cost); **keep** upgrades and story progress.
   Bad fights and bad choices cost money and time — never the story.
+  *(2026-10-19: implemented — `recover()` in `00_core.lua`: 25% fee, cargo wiped, respawn at the
+  last dock via `active`; the game-over prompt is "X to recover".)*
 - **Out of fuel:** you drift, vulnerable — you cannot thrust or fire (gun *or* missiles). In
   system you can still be towed/refuelled at a station; in **dead space, dry fuel is death** (no
   one to hail). *(2026-10-19: implemented — `fuel<=0` inside the disc = adrift + unarmed;
@@ -139,7 +141,8 @@ Fuel 100/100 (thrust **0.06/f**, doubled 2026-10-19) · Missiles 10/10 · Credit
   (`ROID_CAP=22`) and **top back up over time** (`ROID_RESPAWN=150`); missiles damage them.
   Values live in `ECO` (`50_station.lua`) and `foes_def`/`FOE_CAP` (`10_entities.lua`).
   *(2026-10-19: cargo 3→10, ore sell 30→10, cell 150→250 — the cell must be a real grind, not a
-  short hop.)*
+  short hop. Station menu sells **missiles at 15 CR**; solid rocks have 12 hp so a charged shot
+  mines faster.)*
 - **Upgrade pacing rule:** *best-in-slot tier ≈ current chapter − 1 (casual) / chapter (min-maxer)*,
   capped at Tier 4. Shop stock is era-gated; cost is the real throttle.
   (→ End of Ch3 ≈ Tier 2 comfortably, second Tier-2 if you chase content, Tier-3 weapon only with grind.)
@@ -307,6 +310,9 @@ external libs.
 **Save (`cartdata`):** pack into the 64 numeric slots — current chapter, branch flag, credits,
 missile count, upgrade tiers (3 small ints), quest_step, a story-flags bitfield, and a
 seen-dialogue bitset. Version-tag the save.
+*(2026-10-19 Ch1: partial — `save_game`/`load_game` in `00_core.lua` persist chapter/qs/ohint/
+credits/ore/missiles to `cartdata("vrk1")`, saved on dock, jump and ship-menu EXIT; the title
+offers `X continue` / `O new game`. Upgrade tiers and dialogue bitset still to come.)*
 
 **Test loop:** I run `pico8 -x chapters\ch01\ch01.p8` headless to catch syntax/runtime errors and read
 `printh` diagnostics; the user runs interactive playtests and reports. Token/char counts verified in

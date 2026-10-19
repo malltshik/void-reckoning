@@ -8,12 +8,14 @@ function mission_lines()
   or qs==2 and "buy a hyper-cell at the outpost."
   or "fly to the jump gate and jump."
  return {"[main] "..m,"[side] destroy pirates for bounty.",
-  "[side] mine and sell ore.","[side] scan for dead space."}
+  "[side] mine and sell ore."}
 end
 
 function inventory_lines()
- return {"$"..p.credits,"ore "..p.ore.." / "..p.mcargo,
+ return {"$"..p.credits,
+  "ore "..p.ore.." / "..p.mcargo,
   "missiles "..p.mis.." / "..p.mmis,
+  "cargo: sealed (br-11k0)",
   qs>=3 and "hyper-cell: fitted" or "hyper-cell: none"}
 end
 
@@ -30,7 +32,8 @@ function init_story()
   {kind="term",lines={
    "> critical: wormhole collision",
    "> critical: navigation data corrupted",
-   "> critical: hyper-cell damaged"}}
+   "> critical: hyper-cell damaged",
+   "> nav chart: warning entry erased"}}
  }
 end
 
@@ -96,21 +99,16 @@ end
 function draw_fly()
  cls(0)
  local t=spt
- -- star streaks whipping past (the ship races to the right)
+ -- star streaks whipping past, the wormhole swelling dead ahead, then a white flash
  for i=1,24 do
   local y=(i*37)%128
   local x=(i*53-t*5)%152-14
   line(x,y,x+4,y,i%4==0 and 7 or 5)
  end
- -- the wormhole dead ahead, swelling as we close the distance
  local wr=5+min(t,84)*0.29
  for r=0,2 do circ(100,64,wr*(0.45+r*0.28),1+r) end
  circfill(100,64,wr*0.34,13)
  circfill(100,64,wr*0.16,7)
- -- the ship shrinks into the core, then a flash swallows it
- local imp=max(0,t-84)
- local sc=1-imp*0.028
- sspr(0,0,8,8,30+min(imp,28)*2.3-8*sc,64-8*sc,16*sc,16*sc)
  if t>104 then circfill(100,64,min(140,(t-104)*18),7) end
 end
 
@@ -118,18 +116,11 @@ function draw_wormhole()
  local cx=64
  local cy=58
  local wc={2,12,13}
- -- tunnel rings collapsing toward the core
  for i=5,1,-1 do circ(cx,cy,i*13,wc[1+flr(rnd(#wc))]) end
- -- radial warp streaks spinning in
  for i=0,7 do
   local a=frame*0.02+i/8
   line(cx+cos(a)*24,cy+sin(a)*24,cx+cos(a)*96,cy+sin(a)*96,wc[1+flr(rnd(#wc))])
  end
- -- the ship spirals in, shrinking toward the core
- local k=min(spt,140)/140
- local sa=spt*0.06
- local sr=54*(1-k)
- spr(SPR_PLAYER+ship_frame(sa+0.25),cx+cos(sa)*sr-4,cy+sin(sa)*sr-4)
  if spt>120 then circfill(cx,cy,min(60,(spt-120)*2),7) end
 end
 
@@ -160,7 +151,7 @@ function update_jump()
  jt+=1
  if btnp(4) or btnp(5) then
   -- X skips the reveal; once every line is shown, X ends the chapter
-  if jt>#jlines*JPER then state=7 got=180 else jt=#jlines*JPER+1 end
+  if jt>#jlines*JPER then state=7 got=180 save_game() else jt=#jlines*JPER+1 end
  end
 end
 

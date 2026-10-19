@@ -8,6 +8,7 @@ end
 
 function fire_primary(power)
  power=power or 1
+ tut=0
  local dmg=8*power
  local spd=4+(power-1)*0.5
  p.wcd=8
@@ -80,16 +81,16 @@ function collide_all()
      break
     end
    end
-   if not hit then
-    for j=1,#roids do
-     local r=roids[j]
-     if r.solid and hit2(b.x,b.y,r.x,r.y,r.r) then
-      hit_roid(j)
-      hit=true
-      break
+    if not hit then
+     for j=1,#roids do
+      local r=roids[j]
+      if r.solid and hit2(b.x,b.y,r.x,r.y,r.r) then
+       hit_roid(j,b.d)
+       hit=true
+       break
+      end
      end
     end
-   end
    if hit then deli(bullets,i) end
   else
    if hit2(b.x,b.y,p.x,p.y,5) then
@@ -113,7 +114,7 @@ function collide_all()
    for j=1,#roids do
     local r=roids[j]
     if r.solid and hit2(m.x,m.y,r.x,r.y,r.r) then
-     hit_roid(j,3)
+     hit_roid(j,12)
      hit=true
      break
     end
@@ -141,8 +142,12 @@ function collide_all()
  end
  for j=1,#foes do
   local f=foes[j]
-  if hit2(p.x,p.y,f.x,f.y,f.r+4) then
-   damage_player(0.5,"RAMMED BY A PIRATE")
+  if hit2(p.x,p.y,f.x,f.y,f.r+4) and p.ramt<=0 then
+   damage_player(2,"RAMMED BY A PIRATE")
+   p.ramt=30
+   local a=atan2(p.x-f.x,p.y-f.y)
+   p.dx+=cos(a)*1.2
+   p.dy+=sin(a)*1.2
   end
  end
 end

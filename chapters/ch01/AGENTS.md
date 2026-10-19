@@ -4,8 +4,8 @@
 PICO-8 gotchas and shared rules. This file carries only what is **specific to Chapter 1**,
 so work on later chapters isn't burdened by it. Story canon: `chapters/ch01/lore.md`.
 
-- **Cart budget:** ~7691 / 8192 tokens (~501 free) at last measure. Each chapter is its own
-  cart with its own 8192 budget - re-measure per cart (root `AGENTS.md` §7/§12).
+- **Cart budget:** ~8145 / 8192 tokens (~47 free) at last measure - very tight; trim before
+  adding. Each chapter is its own cart with its own 8192 budget (root `AGENTS.md` §7/§12).
 - **Source layout:**
   ```
   chapters/ch01/ch01.p8            cart (#include + __gfx__/__label__/__map__/__sfx__/__music__)
@@ -45,3 +45,24 @@ so work on later chapters isn't burdened by it. Story canon: `chapters/ch01/lore
 - Station screen: status strip under the title (`$`@10, hull@38, fuel@88); menu items y26
   step 11; `sub`/status text <=2 lines at y92; prompt y112. Ship menu (state 8): status
   line y44, prompt y112.
+
+## Polish pass (2026-10-19)
+
+- **HUD** is full width: `HP/SH` left, `FU/CG` right (bars 42px), with **credits** at the
+  right of row 1 and a **missile icon** (green = have rockets, red = empty) + count at the
+  right of row 2 (`misicon` in `40_ui.lua`).
+- **Save/continue (DESIGN §13):** `save_game`/`load_game` in `00_core.lua` persist
+  qs/ohint/credits/ore/missiles to cartdata `vrk1`; saved on dock, on jump, and on ship-menu
+  EXIT. The title offers `X continue` / `O new game` when a save exists.
+- **Death = setback, not reset (DESIGN §7):** `recover()` respawns at the last dock, wipes
+  cargo and takes a 25% credit fee; keep progress. Game-over prompt is `X to recover`.
+- Gate prompt now says **jump** (was "dock"); dock/jump radius widened 14 -> 20.
+- Station menu gained **BUY MISSILE** (`ECO.missile=15`); solid rocks `hp` 3 -> **12** so a
+  charged shot mines faster (bullets pass their damage; missiles do 12).
+- Ramming a foe knocks you back with a 30-frame `p.ramt` cooldown (no more per-frame drain).
+- `spawn_roid` won't drop a rock on the player; planets keep clear of the two stations.
+- Story seeds: terminal adds `nav chart: warning entry erased`; the inventory shows
+  `cargo: sealed (br-11k0)`; the officer names br-11k0 and "a word scratched on the wall".
+- Flight shows a one-time control hint (`tut`), and the ship rings gold at full charge.
+- Dropped for token budget: second enemy (raider), charge meter, dead-space scan side
+  objective, hit-flash, station extra art.

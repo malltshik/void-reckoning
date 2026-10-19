@@ -16,11 +16,14 @@ foes_def={
 function update_flight()
  -- open the ship menu (mission / inventory) with the pause/enter key
  if btnp(6) then open_menu() return end
+ if p.ramt>0 then p.ramt-=1 end
+ if tut>0 then tut-=1 end
  -- X near a station docks / jumps; elsewhere X is the cannon
  if btnp(BY) then
-  local st=nearest_station(14)
+  local st=nearest_station(20)
   if st then
    p.chg=0
+   tut=0
    if st.kind=="gate" then start_jump() else dock(st) end
    return
   end
@@ -273,6 +276,7 @@ end
 function damage_player(d,why)
  p.scd=180
  sfx(4,2)
+ shk=max(shk,4)
  if p.shd>=d then
   p.shd-=d
  else

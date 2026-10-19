@@ -41,15 +41,16 @@ function _init()
  init_player()
  load_system(chapter)
  init_story()
+ tut=700
+ hassave=load_game()
 end
 
 function init_player()
  p={x=64,y=64,dx=0,dy=0,a=0.25,
   hp=100,mhp=100,shd=50,mshd=50,scd=0,
   fuel=100,mfuel=100,credits=40,mis=10,mmis=10,
-  wpn=1,wcd=0,ore=0,mcargo=10,
- chg=0,
- thermal=false,ecm=false,rebel=false}
+  wcd=0,ore=0,mcargo=10,
+  chg=0,ramt=0}
  dth=""
  shk=0
  got=0
@@ -58,6 +59,7 @@ function init_player()
  camy=0
  msg=""
  msgt=0
+ active=nil
 end
 
 function reset_game()
@@ -65,7 +67,39 @@ function reset_game()
  chapter=1
  load_system(chapter)
  init_story()
+ hassave=false
+ dset(8,0)
+ tut=700
  state=0
+end
+
+-- progress persists in the cartdata slots (DESIGN section 13): qs/ohint/credits/ore/
+-- missiles/hp/fuel. Saved on dock, on jump, and on quit; loaded once at boot.
+function save_game()
+ dset(0,1) dset(1,qs) dset(2,ohint and 1 or 0)
+ dset(3,p.credits) dset(4,p.ore) dset(5,p.mis) dset(8,1)
+ hassave=true
+end
+
+function load_game()
+ if dget(8)!=1 or dget(0)!=1 then return false end
+ qs=dget(1) ohint=dget(2)==1
+ p.credits=dget(3) p.ore=dget(4) p.mis=dget(5)
+ return true
+end
+
+-- death is a setback, not a story reset (DESIGN section 7): respawn at the last dock,
+-- lose the cargo hold and a recovery fee, keep progress.
+function recover()
+ local fee=min(p.credits,flr(p.credits*0.25))
+ p.credits-=fee
+ p.ore=0
+ p.hp=p.mhp p.shd=p.mshd p.fuel=p.mfuel
+ p.dx=0 p.dy=0 p.chg=0 p.scd=0 p.ramt=0
+ if active then p.x=active.x p.y=active.y+18 else p.x=ARX p.y=ARY+80 end
+ msg_set("RECOVERED -"..fee.."$  CARGO LOST")
+ save_game()
+ state=2
 end
 
 function msg_set(s)
@@ -158,10 +192,9 @@ function _update()
  -- suppress pico-8's built-in pause menu so button 6 drives our own ship menu
  if btn(6) then poke(0x5f30,1) end
  if state==0 then
-  if btnp(4) or btnp(5) then
-   state=1
-   start_story()
-  end
+  if btnp(5) then
+   if hassave then state=2 else state=1 start_story() end
+  elseif btnp(4) and hassave then reset_game() end
  elseif state==1 then
   update_story()
  elseif state==2 then
@@ -172,10 +205,12 @@ function _update()
   update_jump()
  elseif state==8 then
   update_menu()
- elseif state==6 or state==7 then
-  if state==6 then update_fx() end
-  if got>0 then
-   got-=1
+ elseif state==6 then
+  update_fx()
+  if got>0 then got-=1
+  elseif btnp(4) or btnp(5) then recover() end
+ elseif state==7 then
+  if got>0 then got-=1
   elseif btnp(4) or btnp(5) then reset_game() end
  end
 end

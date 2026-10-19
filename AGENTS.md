@@ -368,6 +368,14 @@ If a note only matters for one chapter, put it there - not here.
 
 ## 13. Changelog (brief - the full play-by-play lives in git/chat)
 
+- [2026-10-19] **Chapter 1 polish pass:** full-width HUD with credits + a missile icon
+  (green/red); save/continue via `cartdata` (saved on dock/jump/EXIT, title offers
+  continue/new); death now respawns at the last dock with a 25% fee + cargo wipe (DESIGN §7)
+  instead of resetting; the station sells missiles; sturdier rocks reward charged shots; ram
+  knockback + cooldown; spawn clearance; story seeds (scrubbed chart, a visible sealed crate,
+  the officer's br-11k0 line); one-time control hint + full-charge ring. Cart is now
+  ~8145/8192 (very tight) - dropped for budget: a second enemy, the charge meter, the
+  dead-space-scan objective, hit-flash.
 - [2026-10-19] **Split per-chapter context out of the root `AGENTS.md`:** the Ch1 "as built"
   notes moved to `chapters/ch01/AGENTS.md`; the root §11 is now a chapter-agnostic pointer.
   Genericized the remaining ch01 examples (`<ch>`/`<cart>`) and moved the ch01 token figure

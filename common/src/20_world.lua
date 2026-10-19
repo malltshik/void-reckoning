@@ -7,22 +7,28 @@ ROID_RESPAWN=150
 function spawn_roid()
  local a=rnd(1)
  local rr=rnd(1)*(ARR-30)
- add(roids,{x=ARX+cos(a)*rr,y=ARY+sin(a)*rr,
-  dx=(rnd(1)-0.5)*0.4,dy=(rnd(1)-0.5)*0.4,r=3+rnd(4),hp=3,c=7,solid=true})
+ local x=ARX+cos(a)*rr
+ local y=ARY+sin(a)*rr
+ if hit2(x,y,p.x,p.y,30) then return end
+ add(roids,{x=x,y=y,dx=(rnd(1)-0.5)*0.4,dy=(rnd(1)-0.5)*0.4,r=3+rnd(4),hp=12,c=7,solid=true})
 end
 
 function load_system(id)
  srand(1000+id)
  planets={} stations={} roids={} foes={} drops={} bullets={} missiles={} parts={} blasts={} floats={}
+ -- authored skeleton: chapter 1 (all inside the round arena)
+ add(stations,{x=150,y=110,kind="outpost",name="OUTPOST"})
+ add(stations,{x=400,y=400,kind="gate",name="JUMP GATE"})
  local n=4+flr(rnd(3))
  for i=1,n do
   local a=rnd(1)
   local rr=rnd(1)*(ARR-50)
-  add(planets,{x=ARX+cos(a)*rr,y=ARY+sin(a)*rr,r=10+rnd(12),c=1+flr(rnd(15))})
+  local x=ARX+cos(a)*rr
+  local y=ARY+sin(a)*rr
+  if abs(x-150)+abs(y-110)>60 and abs(x-400)+abs(y-400)>60 then
+   add(planets,{x=x,y=y,r=10+rnd(12),c=1+flr(rnd(15))})
+  end
  end
- -- authored skeleton: chapter 1 (all inside the round arena)
- add(stations,{x=150,y=110,kind="outpost",name="OUTPOST"})
- add(stations,{x=400,y=400,kind="gate",name="JUMP GATE"})
  for i=1,36 do
   -- solid = white rock you can mine/ram; the dark/grey ones are just background
   -- depth (non-solid) so they never look like a hazard you can hit.
@@ -34,8 +40,7 @@ function load_system(id)
   local a=rnd(1)
   local rr=rnd(1)*(ARR-20)
   add(roids,{x=ARX+cos(a)*rr,y=ARY+sin(a)*rr,
-   dx=(rnd(1)-0.5)*0.4,dy=(rnd(1)-0.5)*0.4,
-   r=3+rnd(4),hp=3,c=c,solid=solid})
+   dx=(rnd(1)-0.5)*0.4,dy=(rnd(1)-0.5)*0.4,r=3+rnd(4),hp=12,c=c,solid=solid})
  end
  for i=1,2 do
   spawn_foe("scout",300+rnd(80),300+rnd(80))
@@ -124,7 +129,9 @@ function draw_flight()
  draw_stations()
  draw_player()
  camera()
- if nearest_station(14) then pc(BX.." dock",110,GT) end
+ local st=nearest_station(20)
+ if st then pc(BX..(st.kind=="gate" and " jump" or " dock"),110,GT) end
+ if tut>0 then pc("arrows fly  "..BX.." gun  "..BO.." missile",20,10) end
  -- dead space warning (past the system edge) / stranded warning (no fuel inside)
  local ad=arena_dist(p.x,p.y)
  if frame%30<20 then
@@ -175,6 +182,8 @@ function draw_player()
   pset(p.x+cos(b)*4,p.y+sin(b)*4,9)
  end
  if p.scd>150 and frame%6<3 then circ(p.x,p.y,7,8) end
+ -- ready cue: ring the ship while the cannon sits at full charge
+ if p.chg>=CHGMAX then circ(p.x,p.y,6,10) end
 end
 
 function draw_foes()

@@ -35,6 +35,13 @@ function dock(s)
     if qs==1 then qs=2 end
     m.sub="SOLD ORE +"..g.."$"
    end},
+  {label="BUY MISSILE ("..ECO.missile.."$)",act=function(m)
+   if p.mis>=p.mmis then m.sub="MISSILE BAY FULL" return end
+   if p.credits<ECO.missile then m.sub="NOT ENOUGH $" return end
+   p.credits-=ECO.missile
+   p.mis+=1
+   m.sub="MISSILE LOADED ("..p.mis.."/"..p.mmis..")"
+  end},
   {label="BUY HYPER-CELL ("..ECO.cell.."$)",act=function(m)
    if qs>=3 then m.sub="HYPER-CELL ALREADY FITTED" return end
    if p.credits>=ECO.cell then
@@ -53,6 +60,7 @@ function dock(s)
   qs=1
   dlg_start("officer")
  end
+ save_game()
 end
 
 function update_station()
