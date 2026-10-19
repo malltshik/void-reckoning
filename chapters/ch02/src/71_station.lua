@@ -1,5 +1,6 @@
--- 71_station: Chapter 2 docking. XR-7PO has no trade - the hold carries fragments, so the
--- only service here is slicing the archive's dead terminal to rebuild the navigation key.
+-- 71_station: Chapter 2 docking. The archive has no services: the first dock plays its
+-- short brief, and once every relic is aboard it goes straight into the code crack.
+-- A container opens the slicing minigame directly (rules + screens in 73_combat).
 
 function nearest_station(range)
  for s in all(stations) do
@@ -9,58 +10,45 @@ function nearest_station(range)
 end
 
 function dock(s)
+ if s.hot then msg_set("GUARDS NEARBY") return end
+ if s.kind=="container" then
+  start_slice(s)
+  return
+ end
  active=s
- local items={
-  {label="LOCAL INDEX",act=function(m)
-   m.sub=p.ore.." of "..RELIC_GOAL.." relics recovered."
-  end}
-  }
-  -- once all relics are aboard, the code can be cracked
-  if qs>=3 then
-   add(items,{label="CRACK THE CODE",act=function(m)
-    if qs>=4 then m.sub="COORDINATES ALREADY LOGGED" return end
-    slicing=true
-    talk("slice",P_TERM)
-   end})
-  end
- sm=menu_new("XR-7PO ARCHIVE",items)
- sfx(6,3)
- set_music(MUS_STATION)
  state=4
-  -- first dock: the archive explains what it lost
-  if not ohint then
-   ohint=true
-   talk("archive",P_TERM)
-  end
+ sfx(6,3)
  save_game()
+ if not ohint then
+  ohint=true
+  talk("archive",P_TERM)
+ elseif qs>=3 and qs<4 then
+  start_slice(s)
+ end
 end
 
 function update_station()
- -- the archive's briefing plays over the menu; finishing the slice sets the key
+ if mg then update_mg() return end
  if dg then
   update_dlg()
-  if dg==nil and slicing then
-   slicing=nil
-   qs=4
-   msg_set("COORDINATES RECOVERED")
-   save_game()
-  end
+  -- the brief ends with the crack, if the relics are already aboard
+  if dg==nil and qs>=3 and qs<4 then start_slice(active) end
   return
  end
- menu_tick(sm)
  if btnp(BN) then state=2 end
 end
 
 function draw_station()
+ if mg then draw_mg() return end
  rectfill(6,6,121,121,1)
  rect(6,6,121,121,GT)
  if dg then draw_dlg() return end
- print("relics "..p.ore.."/"..RELIC_GOAL,10,18,12)
- menu_show(sm)
- pc(BX.." select  "..BO.." undock",112,GT)
+ print("the archive is silent.",12,26,GT)
+ print("it wants its relics.",12,36,GT)
+ pc(BO.." undock",112,GT)
 end
 
--- death keeps the fragments: they ARE the progress here, so the engine's default recover
+-- death keeps the relics: they ARE the progress here, so the engine's default recover
 -- (which wipes p.ore) is wrong for XR-7PO. There is no money, so no recovery fee either.
 function recover()
  p.hp=p.mhp p.shd=p.mshd p.fuel=p.mfuel

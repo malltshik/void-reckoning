@@ -5,12 +5,14 @@ contract, PICO-8 gotchas, tooling and shared rules. This file carries only what 
 to Chapter 1**, so work on later chapters isn't burdened by it. Story canon:
 `chapters/ch01/lore.md`.
 
-- **Cart budget:** 8145 / 8192 tokens (47 free) at the 2026-10-19 handover - measure with
+- **Cart budget:** 8065 / 8192 tokens (127 free) at the 2026-10-19 handover - measure with
   `p8check tokens ch01` before and after any change. ~40k / 65k chars. Each chapter is its own
   cart with its own 8192 budget (root `AGENTS.md` section 9). Web export: ~29k chars once comments
   are stripped, ~4.7k compressed bytes under the 15,360 limit (`p8check size ch01`).
 - **Verification:** `python common/tools/p8check.py all ch01` = tokens + a 40+-assertion smoke
   playthrough + 16 staged screenshots (`tmp/shots/ch01_*.png`) with a text-clipping sweep.
+- `draw_term` (the corrupted-terminal story page) lives in this chapter's `72_story.lua` since
+  2026-10-19 - it left the engine because only Ch1 uses it.
 - **Source layout:**
   ```
   chapters/ch01/ch01.p8             cart: #include list + __gfx__/__label__/__map__/__sfx__/__music__

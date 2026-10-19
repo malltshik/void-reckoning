@@ -29,9 +29,9 @@ twist (the sealed cargo is empty), **Ch6** the fork (defect or die loyal), **Ch1
 
 **Status:** Chapter 1 is a complete, playable vertical slice (intro -> mine -> dock -> buy
 hyper-cell -> jump -> warp finale, with save/continue and death-respawn). Chapter 2 is a
-playable **combat** slice (XR-7PO: warp-in recap -> a red resistance pilot's hail -> **paced
-waves** of scavengers with salvage breaks -> collect **24 navigation relics** -> the reaver boss
--> crack the archive's code -> jump). The docked
+playable **infiltration** slice (XR-7PO: warp-in recap -> a red resistance pilot's hail ->
+**slice 5 sealed relic containers** in a timed find-the-repeated-sequence minigame; a timeout
+trips an **alarm** that brings guards -> crack the archive's code -> jump). The docked
 negotiation layer (state 3) is built but currently unused by any chapter. Chapters 3-10 are
 not built.
 
@@ -117,10 +117,11 @@ to **both**): `0` title - `1` story/cutscene - `2` flight - `3` negotiation - `4
 
 A chapter may also **override** engine sim functions by redefining them (they are globals,
 resolved at call time, and the harness stubs by name) when its *rules* differ - e.g. Ch2
-redefines `hit_foe` / `update_drops` / `recover` so kills drop navigation relics (never
-bounty) and death keeps them. That is the established escape hatch when a generic engine hook
-would not pay its way (section 9); prefer data (`foes_def.n`, `load_system` globals,
-`drops` entries `{x y kind c}`) and hooks first, override only real rule differences.
+redefines `hit_foe` (kills grant salvage directly, never bounty) and `recover` (death keeps
+the relics). That is the established escape hatch when a generic engine hook would not pay
+its way (section 9); prefer data (`foes_def.n`, `load_system` globals, `drops` entries
+`{x y kind c}`, station `label` for the dock prompt) and hooks first, override only real
+rule differences.
 
 **Key globals:** `p` (player), `foes roids drops bullets missiles parts blasts floats planets
 stations` (flat pools), `active` (respawn dock), `qs ohint`, `sm` (station menu) `mm` (ship
@@ -170,8 +171,9 @@ Characters: 65,535 max (Ch1 uses ~40k with comments, ~29k without).
   (`poke(0x5f54,0x60)` + `sspr` + `pal()`). `camera()` must be reset first (sspr honours it) and
   anything drawn in flight must be redrawn every frame. Every other state clears via `_draw`;
   don't add redundant `cls`.
-- Sprite sheet: `gen_gfx.py` writes ships (0-7 player, 8-15 scout, 16-23 raider, 24-31 militia)
-  and the two 16x16 portraits (32, 34). Colour 0 is transparent. The map region holds the title
+- Sprite sheet: `gen_gfx.py` writes ships (0-7 player, 8-15 scout, 16-23 raider, 24-31 militia),
+  four 16x16 portraits (32 pilot, 34 rooke, 36 red pilot, 38 archive terminal) and the 16x16
+  jump-gate block (40,41,56,57). Colour 0 is transparent. The map region holds the title
   font - **use it for nothing else**.
 
 **Headless PICO-8** (`pico8.exe -x`)
@@ -252,7 +254,8 @@ $py = "C:\Users\Artem Gavrilov\AppData\Local\Python\bin\python.exe"
 - Flight: arrows = snappy 8-way (nose follows input, quick stop, no drift). **X** = gun (hold to
   charge, release to fire; power 1-3, power 3 adds a spread; charging suppresses shield regen; a
   gold ring marks full charge). **Z** = homing missile (needs fuel). **X near a station** =
-  dock / jump (checked before the gun; a centred `X dock` / `X jump` prompt shows near it).
+  dock / jump (checked before the gun; a centred `X <label>` prompt shows near it - `dock`,
+  `jump`, or the station's own `label` such as Ch2's container `slice`).
 - **Enter/P** = ship menu (state 8): MISSIONS / INVENTORY / EXIT; the lower pane is a carousel
   (left/right cycle entries), Z returns, EXIT saves and quits to the title.
   `poke(0x5f30,1)` each held frame suppresses PICO-8's own pause menu.
@@ -275,17 +278,17 @@ Each chapter cart has its **own** 8192 tokens, but the engine is included in eve
 engine tokens are paid N times: **trimming `common/` is the best investment**, and engine
 additions must be justified. Current figure per chapter is in its own `AGENTS.md`.
 
-Current figures (2026-10-19): **Ch1 = 8145 / 8192 (47 free)**, **Ch2 = 8158 / 8192 (34 free)**.
-The shared engine is ~6.3k, so a chapter gets only ~1.5-1.8k for its own content.
+Current figures (2026-10-19): **Ch1 = 8065 / 8192 (127 free)**, **Ch2 = 8164 / 8192 (28 free)**.
+The shared engine is ~6.46k, so a chapter gets only ~1.5-1.8k for its own content.
 `50_negotiation.lua` is ~378 tokens and is included only by chapters that use `negs` (no chapter
 does now, so nobody pays for the second pillar). The engine grew ~26 tokens for the per-kind
-enemy salvo (`foes_def.n`) and the drop-colour field (`drop.c`) - Ch1 has only 47 free, so the
-**next engine addition will need a trim first** (candidates below). Ch2 fit by implementing its
-rules as chapter overrides instead of engine features. If you are out of room: measure first
-(`p8check tokens`), then look for duplicated helpers (`wrap` vs `wrap_off`), one-use locals, and
-defaults for params every caller passes. Features still cut for budget (re-add only if there is
-room): extra Ch1 enemy (raider), charge meter, dead-space scan objective, hit flash, low-HP/fuel
-HUD blink, one-time control hint. In-editor, the `info` command prints code/token/compressed sizes.
+enemy salvo (`foes_def.n`) and the drop-colour field (`drop.c`); Ch2's dock prompt label cost
+~4 more. Ch2 fits only because its rules are chapter overrides instead of engine features, and
+because two Ch1-only pieces left the engine (section 13). If you are out of room: measure first
+(`p8check tokens`), then look for one-use locals and defaults for params every caller passes.
+Features still cut for budget (re-add only if there is room): extra Ch1 enemy (raider), charge
+meter, dead-space scan objective, hit flash, low-HP/fuel HUD blink, one-time control hint.
+In-editor, the `info` command prints code/token/compressed sizes.
 
 ## 10. Assets pipeline
 
@@ -365,26 +368,37 @@ starting a chapter, copy the previous cart so the label and data come along.
 - **Not built:** Ch3-10, upgrade tiers (DESIGN section 8), the Paragon boss, a real `.p8.png`
   release label per chapter, `game.bin` for Steam.
 - **Known gaps in the new systems:** a negotiation's `nres`/ambush flag are not persisted (a reload
-  loses the pending ambush) - moot until a chapter uses `negs` again; credits/upgrades are not
-  carried between chapters; the `load()` chain only actually swaps carts in the exported bundle.
-- **Cut from Ch2 for the 8192-token wall:** nothing - it sits at 34 free. Ch1 has 47 free:
-  second enemy (raider; sprites already in the sheet), charge meter, hit flash, low-HP/fuel HUD
-  blink, one-time control hint, dead-space scan side objective are still re-addable.
-- **Possible engine trims** (each pays back in every chapter): merge `wrap`/`wrap_off`
-  (`00_core` / `60_dialogue`; note `wrap("")` returns one empty line, which `draw_term` relies on
-  for cursor placement), shrink the `lc()` print wrapper, generalise `draw_stations`.
+  loses the pending ambush) - moot until a chapter uses `negs` again; Ch2's per-container
+  `sliced`/`hot` flags are not persisted (a reload re-arms sliced containers, but `p.ore` is saved
+  and capped, so progress cannot be over-counted); credits/upgrades are not carried between
+  chapters; the `load()` chain only actually swaps carts in the exported bundle.
+- **Cut from Ch2 for the 8192-token wall:** the drop-pickup system (salvage is granted directly on
+  a kill now) and the archive station menu (docking auto-runs the code crack). Ch2 sits at 28 free.
+  Ch1 has 127 free: second enemy (raider; sprites already in the sheet), charge meter, hit flash,
+  low-HP/fuel HUD blink, one-time control hint, dead-space scan side objective are still re-addable.
+- **Engine trims done (2026-10-19):** `wrap`/`wrap_off` merged into one offset-wrap in `00_core`
+  (`wrap("")` still returns one empty line, which `draw_term` relies on for cursor placement);
+  `draw_term` moved out of `60_dialogue` into `chapters/ch01/src/72_story.lua` (only Ch1's cold
+  open uses terminal pages). Remaining candidates: shrink the `lc()` print wrapper, generalise
+  `draw_stations`.
 - **Untested by tooling:** audio, feel/balance, anything only visible in motion - needs a human.
 - **Resolved:** cross-cart progress = multicart bundle (step 6); bundle export mode + `load()`
   chaining hooks are in.
 ## 14. Changelog (brief - full detail is in git)
 
-- [2026-10-19] **XR-7PO: paced waves, warp-in intro, new portraits.** Playtest feedback: the
-  swarm arrived all at once and the terminal text was long. `update_spawn` is now a Ch2 override -
-  a small wave spawns, then a ~8 s salvage break while the field is clear, then a bigger wave;
-  the reaver comes alone once 23 relics are aboard. The chapter opens with the Ch1 warp-out
-  animation (recap + the new goal: recover the coordinates, how is unknown), then a beeping signal
-  and a short hail from a red resistance pilot (new portrait sprite 36); the archive uses a monitor
-  portrait (sprite 38) with trimmed text; "relic" replaces "fragment". Ch2 = 8158/8192 (34 free).
+- [2026-10-19] **XR-7PO redesigned: relic containers + slicing minigame.** Playtest feedback:
+  the wave loop was unwinnable without die-recover cheese, and the counters were noisy. The
+  kill-24-relics grind and the reaver are gone. XR-7PO now hides **5 sealed relic containers**
+  (fixed positions; the white mineable rocks are gone, grey scenery stays). Fly to one, `X slice`
+  -> a timed terminal minigame: a 6x20 stream of random symbols hides exactly one 4-char sequence
+  repeated twice; arrows move a 4-char window (shift 1), X takes it, a wrong pick burns 40 frames.
+  `SLICE_T` shrinks per container (340..100, the archive's terminal 80 = pure reaction). A timeout
+  trips `ALARM`: 3-6 guards spawn and the container stays sealed until they die (kills grant
+  salvage directly - the drop system was cut for tokens). 5 relics -> dock the archive -> the code
+  crack is the same minigame at its hardest -> `qs=4` -> gate. No wave/relic counter text: the
+  radar compass, floating text and the ship-menu inventory carry the info. Engine trims paid for
+  it: `wrap`/`wrap_off` merged (offset-wrap in `00_core`), `draw_term` moved to Ch1. Ch2 = 8164/8192
+  (28 free), Ch1 = 8065 (127 free).
 
 - [2026-10-19] **Jump gate has its own sprite.** The gate used to share the outpost's
   solar-panel silhouette and read as a station. `gen_gfx.py` now bakes a 16x16 pylon portal

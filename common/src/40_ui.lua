@@ -38,10 +38,10 @@ function menu_show(m)
   local sel=k==m.i
   print((sel and chr(23) or " ")..k.."."..it.label,8,26+(k-1)*11,sel and 7 or GT)
  end
- if m.sub!="" then
-  local ls=wrap(m.sub,31)
-  for i=1,min(2,#ls) do print(ls[i],8,92+(i-1)*8,GT) end
- end
+  if m.sub!="" then
+   local ls=wrap(m.sub,31)
+   for i=1,min(2,#ls) do print(ls[i].t,8,92+(i-1)*8,GT) end
+  end
 end
 
 -- big title in the custom font (0x5f58 enables it at 0x5600) with a drop shadow
@@ -103,7 +103,7 @@ function draw_menu()
  local it=mm.items[mm.i]
  it.ci=it.ci or 1
  local ls=wrap(it.lines[it.ci] or "",25)
- for k=1,#ls do pc(ls[k],54+(k-1)*9,7) end
+ for k=1,#ls do pc(ls[k].t,54+(k-1)*9,7) end
  if #it.lines>1 then
   print(chr(139),8,58,GT)
   print(chr(145),114,58,GT)

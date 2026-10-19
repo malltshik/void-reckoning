@@ -112,6 +112,23 @@ function draw_story()
  else draw_dlg() end
 end
 
+-- terminal page: a typed-out system log. Lives here (not in the engine) because only
+-- Chapter 1's cold open uses it. The engine's wrap() gives {t=line, o=offset} lines.
+function draw_term(pg)
+ local n=spt*3
+ local y=30
+ for i=1,#pg.lines do
+  local s=pg.lines[i]
+  local shown=sub(s,1,clampi(n,0,#s))
+  for k in all(wrap(shown,29)) do
+   print(k.t,8,y,GT)
+   y+=8
+  end
+  n-=#s
+ end
+ if frame%30<15 then print(chr(16),8,y,GT) end
+end
+
 -- cutscene: the ship races through open space and is swallowed by the wormhole,
 -- handing off to draw_wormhole (the tunnel collapse) on the next page.
 function draw_fly()

@@ -7,11 +7,13 @@ system, and negotiation when you dock. Dark sci-fi tone.
 **▶ Play in your browser:** <https://malltshik.github.io/void-reckoning/>
 
 **Status:** **Chapter 1** is a complete vertical slice — mine ore, dock at the outpost,
-sell, buy a hyper-cell, jump out. **Chapter 2** (XR-7PO) is a playable **combat** slice: a stripped
-Imperium archive overrun by scavengers — fight the swarm for **24 navigation fragments**, kill the
-**reaver**, then dock and slice the archive's terminal to rebuild your nav key. No ore and no trade:
-salvage enemy wrecks for fuel, missiles and hull. Chapters 3–10 are not built. Chapters chain in the
-multicart bundle (`docs/game.html`); the per-chapter pages stay for preview.
+sell, buy a hyper-cell, jump out. **Chapter 2** (XR-7PO) is a playable **infiltration** slice: a
+stripped Imperium archive guarded by scavengers — **slice open 5 sealed relic containers** (a
+timed find-the-repeated-sequence terminal hack; every container is faster than the last), and if
+the timer empties an **alarm** brings the guards. Salvage comes straight off their wrecks. With all
+5 relics, dock the archive and crack its code, then jump. No ore and no trade. Chapters 3–10 are not
+built. Chapters chain in the multicart bundle (`docs/game.html`); the per-chapter pages stay for
+preview.
 
 Progress autosaves on dock, on jump and on quit; the title offers **continue / new game**.
 Dying respawns you at the last dock for a 25% fee and your cargo — the story never resets.

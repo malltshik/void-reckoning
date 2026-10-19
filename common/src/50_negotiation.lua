@@ -52,7 +52,7 @@ function draw_neg()
  local nm=ng.s.name or PORTNAME[w]
  print(nm,115-sw(nm),44,7)
  local ls=wrap(n.t,29)
- for i=1,min(4,#ls) do print(ls[i],8,54+(i-1)*8,7) end
+ for i=1,min(4,#ls) do print(ls[i].t,8,54+(i-1)*8,7) end
  if not n.o then
   if frame%40<25 then pc(BX.." continue",116,GT) end
   return

@@ -8,8 +8,7 @@ local RR={w=2}
 local NN={w=0}
 
 -- right-hand portrait blocks in the sheet (gen_gfx.py): red pilot 36 at (32,16),
--- terminal 38 at (48,16). Globals so 71_station can pick the terminal portrait too.
-P_RES={32,16}
+-- terminal 38 at (48,16). P_TERM is global so 71_station can pick the terminal too.
 P_TERM={48,16}
 
 -- a talk with a chosen right-hand portrait: the engine's PORT table is a global, so the
@@ -36,24 +35,14 @@ talks={
   "XR-7PO ARCHIVE",
   "TERMINAL: STILL RUNNING",
   RR,
-  "i am the last thing awake here.",
-  "the swarm tore out my navigation relics.",
-  "bring them back and i will remember.",
- },
- slice={
-  NN,
-  "> relics loaded",
-  NN,
-  "> code accepted",
-  RR,
-  "coordinates recovered. the gate is open.",
+  "the swarm sealed my relics in crates.",
+  "slice them open and bring them here.",
  },
 }
-talkname={contact="resistance pilot",archive="archive terminal",slice="archive terminal"}
+talkname={contact="resistance pilot",archive="archive terminal"}
 
 function mission_lines()
- if qs<3 then return {"[main] recover navigation relics ("..p.ore.."/"..RELIC_GOAL..").",
-   "[side] salvage wrecks for fuel, missiles and hull."} end
+ if qs<3 then return {"[main] slice the relic containers ("..p.ore.."/"..RELIC_GOAL..")."} end
  if qs==3 then return {"[main] dock the archive and crack the code."} end
  return {"[main] fly to the gate and jump."}
 end
@@ -62,8 +51,7 @@ function inventory_lines()
  return {"relics "..p.ore.." / "..RELIC_GOAL,
   "missiles "..p.mis.." / "..p.mmis,
   "hull "..flr(p.hp).." / "..p.mhp,
-  "fuel "..flr(p.fuel).." / "..p.mfuel,
-  "cargo: sealed (br-11k0)"}
+  "fuel "..flr(p.fuel).." / "..p.mfuel}
 end
 
 -- warp in from Chapter 1: the recap and the new goal. Keep lines <= 31 chars.
@@ -89,18 +77,13 @@ local JOUT={
 function init_story()
  qs=1
  ohint=false
- slicing=nil
- bossq=0
- wave=0
- wavet=240
- cleared=true
+ mg=nil
  intro=false
  spg=1
  spt=0
  dg=nil
  p.credits=0
  p.mcargo=RELIC_GOAL
- jlines=JIN
  spages={{kind="dlg",id="contact"}}
 end
 
@@ -115,7 +98,7 @@ end
 function update_story()
  local pg=spages[spg]
  spt+=1
- if spt==1 then talk(pg.id,P_RES) end
+ if spt==1 then talk(pg.id,{32,16}) end
  update_dlg()
  if dg==nil then next_spage() end
 end

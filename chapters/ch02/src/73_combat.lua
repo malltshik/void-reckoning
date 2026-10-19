@@ -1,9 +1,101 @@
 -- 73_combat: XR-7PO's combat rules. These override engine sim functions because the rules
--- differ (see the header of 70_world.lua). Functions are globals, so a later definition wins;
--- the engine calls them by name at run time and the harness stubs by name.
+-- differ (see the header of 70_world.lua). Functions are globals, so a later definition
+-- wins; the engine calls them by name at run time and the harness stubs by name.
+--
+-- THE SLICING MINIGAME: a stream of random symbols hides exactly one 4-char sequence that
+-- appears twice. Find it, move the 4-char window over either copy (arrows shift by one
+-- symbol) and take it before the timer empties. Every container slices faster than the
+-- last; a timeout trips the alarm and the guards come. A wrong pick burns timer instead.
 
--- a kill drops a relic (until 23 are aboard - the reaver holds the last) and sometimes a
--- salvage canister (white; its kind decides what it restores)
+SLICE_T={340,260,200,150,100,80}   -- frames: containers 1-5, then the archive's terminal
+
+-- stream of 120 symbols (6 rows of 20) with one 4-char run (the key) placed twice: the
+-- key IS a slice of the stream, copied to a second spot further along. The symbol soup
+-- is pscii 35-70 (#$%&'()*+,-./0-9:;<=>?@A-F); 36 symbols keeps accidental duplicate
+-- 4-grams rare enough (~0.4%) to skip a uniqueness check.
+function gen_buf()
+ local b=""
+ for i=1,120 do b..=chr(35+flr(rnd(36))) end
+ local p=1+flr(rnd(56))
+ local q=p+4+flr(rnd(57))
+ local k=sub(b,p,p+3)
+ return sub(b,1,p-1)..k..sub(b,p+4,q-1)..k..sub(b,q+4),k
+end
+
+-- open a container (or the archive's terminal) and start the timer
+function start_slice(s)
+ local tm=SLICE_T[s.idx or 6]
+ local b,k=gen_buf()
+ mg={s=s,buf=b,key=k,pos=1,t=tm,tm=tm,lock=14}
+ state=4
+ set_music(MUS_STATION)
+ sfx(10,2)
+end
+
+function update_mg()
+ mg.t-=1
+ if mg.t<1 then
+  -- timeout: the alarm trips, the guards come, the container stays sealed till they die
+  local s=mg.s
+  mg=nil
+  s.hot=true
+  msg_set("ALARM")
+  sfx(7,2)
+  for i=1,min(2+(s.idx or 4),6) do
+   local a=rnd(1)
+   spawn_foe(rnd(1)<s.idx*0.14 and "lancer" or "interceptor",clamp_arena(p.x+cos(a)*100,p.y+sin(a)*100,24))
+  end
+  state=2
+  return
+ end
+ if mg.lock>0 then mg.lock-=1 end
+ for i=0,3 do
+  if btnp(i) then mg.pos=mid(1,mg.pos+({-1,1,-20,20})[i+1],117) end
+ end
+ if mg.lock<1 and btnp(BY) then
+  if sub(mg.buf,mg.pos,mg.pos+3)==mg.key then
+   -- the key: a container gives up its relic, the archive gives up the coordinates
+   local s=mg.s
+   mg=nil
+   if s.kind=="container" then
+    s.sliced=true
+    p.ore=min(RELIC_GOAL,p.ore+1)
+    -- a little fuel rides in the case: the loop stays survivable without the alarms
+    p.fuel=min(p.mfuel,p.fuel+20)
+    flt(s.x,s.y-10,"+relic",12)
+    if p.ore>=RELIC_GOAL then qs=3 end
+   else
+    qs=4
+    msg_set("COORDINATES RECOVERED")
+   end
+   sfx(3,3)
+   save_game()
+   state=2
+  else
+   mg.t=max(1,mg.t-40)
+   sfx(2,1)
+  end
+ elseif btnp(BN) then
+  mg=nil
+  state=2
+ end
+end
+
+function draw_mg()
+ print(mg.s.kind=="container" and "RELIC CONTAINER" or "ARCHIVE TERMINAL",24,8,GT)
+ rect(14,20,113,24,5)
+ rectfill(15,21,15+flr(mg.t/mg.tm*98),23,mg.t<90 and 8 or 12)
+ for r=0,5 do
+  print(sub(mg.buf,1+r*20,20+r*20),24,32+r*8,5)
+ end
+ local x,y=24+(mg.pos-1)%20*4,32+(mg.pos-1)\20*8
+ rect(x-1,y-1,x+16,y+6,12)
+ print(sub(mg.buf,mg.pos,mg.pos+3),x,y,7)
+ pc("ARROWS MOVE  X TAKE  Z LEAVE",112,GT)
+end
+
+-- kills drop no loot to chase: salvage comes straight off the wreck (fuel, missiles or
+-- hull), scavengers pay no bounty, and the last kill cools every alarmed container down
 function hit_foe(j,dmg)
  local f=foes[j]
  if f.shd>0 then
@@ -12,79 +104,24 @@ function hit_foe(j,dmg)
  else
   f.hp-=dmg
  end
- if f.hp<=0 then
+ if f.hp<1 then
   boom(f.x,f.y)
   sfx(2,2)
-  if f.kind=="reaver" or p.ore<RELIC_GOAL-1 then
-   add(drops,{x=f.x,y=f.y,kind=2,c=12})
-  end
-  if rnd(1)<0.35 then
-   add(drops,{x=f.x+rnd(8)-4,y=f.y+rnd(8)-4,kind=3+flr(rnd(3)),c=7})
+  local r=flr(rnd(3))
+  if r<1 then
+   p.fuel=min(p.mfuel,p.fuel+30)
+   flt(f.x,f.y-6,"+fuel",9)
+  elseif r<2 then
+   p.mis=min(p.mmis,p.mis+2)
+   flt(f.x,f.y-6,"+missiles",7)
+  else
+   p.hp=min(p.mhp,p.hp+25)
+   flt(f.x,f.y-6,"+hull",7)
   end
   deli(foes,j)
- end
-end
-
--- waves: a small group arrives, then a salvage break while the field is clear, then the
--- next (bigger) wave. The reaver comes alone after the wave that brings the count to 23.
-function update_spawn()
- if arena_dist(p.x,p.y)>ARR then return end
- if #foes>0 or bossq>0 then return end
- if not cleared then
-  cleared=true
-  wavet=240
-  msg_set("WAVE CLEARED - SALVAGE")
-  return
- end
- wavet-=1
- if wavet>0 then return end
- if p.ore>=RELIC_GOAL-1 then
-  bossq=1
-  local a=rnd(1)
-  local x,y=clamp_arena(p.x+cos(a)*210,p.y+sin(a)*210,24)
-  spawn_foe("reaver",x,y)
-  msg_set("THE REAVER WAKES")
-  sfx(7,2)
-  return
- end
- wave+=1
- cleared=false
- local n=min(2+wave,7)
- for i=1,n do
-  local a=rnd(1)
-  local x,y=clamp_arena(p.x+cos(a)*(150+rnd(60)),p.y+sin(a)*(150+rnd(60)),24)
-  spawn_foe(rnd(1)<min(0.1+wave*0.08,0.5) and "lancer" or "interceptor",x,y)
- end
- msg_set("WAVE "..wave)
- sfx(7,2)
-end
-
--- pickups (2 relic, 1/3 fuel, 4 missiles, 5 hull)
-function update_drops()
- for i=#drops,1,-1 do
-  local o=drops[i]
-  local ddx=p.x-o.x
-  local ddy=p.y-o.y
-  if abs(ddx)<36 and abs(ddy)<36 then
-   local dd=sqrt(ddx*ddx+ddy*ddy)+0.001
-   if dd<30 then
-    o.x+=ddx/dd*1.6
-    o.y+=ddy/dd*1.6
-   end
-   if dd<8 then
-    local k=o.kind
-    if k==2 then
-     if p.ore<RELIC_GOAL then
-      p.ore+=1
-      flt(o.x,o.y-4,"+relic",12)
-      if p.ore>=RELIC_GOAL then qs=3 msg_set("RELICS COMPLETE - DOCK ARCHIVE")
-      else msg_set("RELICS "..p.ore.." / "..RELIC_GOAL) end
-     end
-    elseif k==4 then p.mis=min(p.mmis,p.mis+2) msg_set("MISSILES +2")
-    elseif k==5 then p.hp=min(p.mhp,p.hp+25) msg_set("HULL +25")
-    else p.fuel=min(p.mfuel,p.fuel+30) msg_set("FUEL +30") end
-    sfx(3,3)
-    deli(drops,i)
+  if #foes<1 then
+   for s in all(stations) do
+    if s.hot then s.hot=false msg_set("GUARDS DOWN") end
    end
   end
  end

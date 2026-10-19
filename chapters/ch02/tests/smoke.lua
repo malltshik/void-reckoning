@@ -6,7 +6,7 @@
 _init()
 ck(state==0 and not hassave,"boots to the title with no save")
 
--- the warp in: Chapter 1 recap, then the incoming signal, then flight
+-- the warp in: recap, then the incoming signal, then flight
 press(5)
 ck(state==5,"X on the title starts the warp-in")
 for i=1,600 do
@@ -21,22 +21,21 @@ end
 ck(state==2,"the signal hands over to flight")
 ck(p.hp==100 and p.fuel==100 and qs==1,"fresh ship, first quest stage")
 ck(p.mcargo==RELIC_GOAL,"the hold carries relics, not ore")
-local k=stations[1]
-local g=stations[2]
+ck(#foes==0,"no opening patrol: the swarm only answers alarms")
 
--- the gate refuses to open before the nav key is rebuilt
+-- the gate refuses to open before the coordinates are recovered
+local g=stations[7]
 p.x=g.x p.y=g.y
 press(5)
-ck(state==2 and msgt>0,"gate stays locked without the nav key")
+ck(state==2 and msgt>0,"gate stays locked without the coordinates")
 
--- flight, gun, missile (clear the seeded rocks/foes so the shot paths are deterministic)
-roids={} foes={}
-p.x=ARX p.y=ARY-60
+-- flight, gun, missile
+p.x=ARX p.y=ARY
+roids={}
 local x0=p.x
 hold(1,30)
 ck(p.x>x0+10,"arrows fly the ship")
 ck(p.fuel<100,"thrust burns fuel")
-p.x=ARX p.y=ARY
 hold(5,50)
 tick(1)
 ck(#bullets>=3,"a full charge fires the 3-shot spread")
@@ -44,79 +43,77 @@ local m0=p.mis
 press(4)
 ck(p.mis==m0-1 and #missiles>0,"Z launches a missile")
 
--- a kill drops a relic and pays no bounty
-foes={} drops={}
+-- the white mineable rocks are gone; only grey scenery remains
+local whites=0
+for r in all(roids) do if r.solid then whites+=1 end end
+ck(whites==0,"no white rocks: the field was stripped")
+
+-- a kill pays no bounty and grants salvage straight off the wreck
+foes={} bullets={}
+local f0=p.fuel
+local h0=p.hp
+p.hp=50
+p.mis=5
 spawn_foe("interceptor",p.x+60,p.y)
-local c0=p.credits
 hit_foe(1,999)
 ck(#foes==0,"a kill clears the foe")
-ck(p.credits==c0,"scavengers pay no bounty")
-local frag=nil
-for d in all(drops) do if d.kind==2 then frag=d end end
-ck(frag!=nil,"a kill drops a navigation relic")
+ck(p.credits==0,"scavengers pay no bounty")
+ck(p.fuel>f0 or p.mis>5 or p.hp>h0,"a wreck yields fuel, missiles or hull")
 
--- flying over the relic recovers it
-p.x=frag.x p.y=frag.y
+-- the minigame stream: exactly one repeated 4-gram, and it is the key
+local b,k=gen_buf()
+local reps=0
+for i=1,117 do
+ if sub(b,i,i+3)==k then reps+=1 end
+end
+ck(#b==120,"the stream is 6 rows of 20")
+ck(#k==4,"the key is 4 symbols")
+ck(reps==2,"the key is the only 4-gram that repeats")
+
+-- slicing a container: wrong picks burn the timer, the key wins the relic
+local c=stations[2]
+p.x=c.x p.y=c.y
+press(5)
+ck(state==4 and mg!=nil,"X beside a container opens the minigame")
+ck(mg.s==c and mg.tm==SLICE_T[1],"the first container gets the easiest timer")
+mg.lock=0
+local t0=mg.t
+press(5)
+ck(mg.t<t0-30,"a wrong pick burns timer")
+ck(state==4,"a wrong pick does not end the slice")
+local found=0
+for i=1,117 do
+ if sub(mg.buf,i,i+3)==mg.key then found=i end
+end
+mg.pos=found
+press(5)
+ck(mg==nil and state==2,"the key ends the slice")
+ck(c.sliced and p.ore==1,"the container gives up its relic")
+
+-- a timed-out slice trips the alarm; guards come and hold the container sealed
+p.x=stations[3].x p.y=stations[3].y
+press(5)
+ck(state==4 and mg!=nil,"a second container opens the minigame")
+mg.t=1
 tick(2)
-ck(p.ore==1,"flying over a relic recovers it")
+ck(state==2 and msgt>0,"the timeout trips the alarm")
+ck(stations[3].hot,"the failed container is sealed by guards")
+ck(#foes>=3,"the alarm brings guards")
+while #foes>0 do hit_foe(1,999) end
+ck(#foes==0 and not stations[3].hot,"killing the guards cools the container down")
 
--- salvage canisters restore fuel
-drops={}
-p.fuel=50
-add(drops,{x=p.x,y=p.y,kind=3,c=9})
-tick(2)
-ck(p.fuel==80,"a fuel cell refuels")
+-- a hot container refuses to open
+p.x=stations[4].x p.y=stations[4].y
+stations[4].hot=true
+press(5)
+ck(state==2 and msgt>0,"guards keep you out of a hot container")
+stations[4].hot=nil
 
--- asteroid wrecks only ever hold salvage
-roids={} drops={}
-add(roids,{x=p.x+30,y=p.y,dx=0,dy=0,r=4,hp=1,c=7,solid=true})
-p.ore=0
-hit_roid(1,99)
-local onlysal=true
-for d in all(drops) do if d.kind==2 then onlysal=false end end
-ck(onlysal,"asteroid wrecks never drop relics")
-
--- waves: the first one arrives as a group, and clearing it opens a salvage break
-foes={} p.ore=0 bossq=0 cleared=true wavet=0
-update_spawn()
-ck(#foes==3,"the first wave is a group of 3")
-foes={} cleared=false
-update_spawn()
-ck(cleared and wavet==240,"a cleared wave starts a salvage break")
-
--- the reaver wakes when the archive is one relic short
-foes={} drops={}
-p.x=ARX p.y=ARY
-p.ore=RELIC_GOAL-1
-bossq=0 cleared=true wavet=0
-update_spawn()
-local boss=0
-for f in all(foes) do if f.kind=="reaver" then boss+=1 end end
-ck(boss==1,"the reaver wakes at 23 relics")
-
--- killing the reaver drops the last relic; collecting it completes the set
-drops={}
-hit_foe(1,999)
-frag=nil
-for d in all(drops) do if d.kind==2 then frag=d end end
-ck(frag!=nil,"the reaver drops the final relic")
-p.x=frag.x p.y=frag.y
-tick(2)
-ck(p.ore==RELIC_GOAL and qs==3,"the 24th relic completes the set")
-
--- a lancer's volley is a fan of bullets, not one shot
-foes={} bullets={}
-p.x=ARX p.y=ARY
-spawn_foe("lancer",p.x+40,p.y)
-foes[1].cd=0
-update_foes()
-local nb=0
-for b in all(bullets) do nb+=1 end
-ck(nb>=3,"a lancer fires a salvo of 3")
-
--- dock: the archive speaks, then the terminal cracks the code
-foes={} bullets={}
-p.x=k.x p.y=k.y+8
+-- the archive: the brief, then (with the set complete) the code crack
+foes={}
+p.x=stations[1].x p.y=stations[1].y+8
+p.ore=RELIC_GOAL
+qs=3
 press(5)
 ck(state==4,"X beside the archive docks")
 ck(dg!=nil,"the archive speaks on the first visit")
@@ -125,34 +122,35 @@ for i=1,300 do
  press(5)
 end
 ck(dg==nil and ohint,"the archive sets the mission hint")
-ck(dget(8)==1,"docking saves")
-ck(#sm.items>=2,"the code-crack option is available with the set complete")
-sm.i=2
-press(5)
-ck(dg!=nil and slicing,"choosing CRACK THE CODE runs the terminal")
-for i=1,300 do
- if not dg then break end
- press(5)
+ck(mg!=nil and mg.s==stations[1],"the brief ends with the code crack")
+ck(mg.tm==SLICE_T[6],"the terminal is the hardest timer")
+mg.lock=0
+found=0
+for i=1,117 do
+ if sub(mg.buf,i,i+3)==mg.key then found=i end
 end
-tick(2)
-ck(qs==4,"cracking the code recovers the coordinates")
--- the option is now stale: it must refuse a second crack
-sm.sub=""
+mg.pos=found
 press(5)
-ck(sm.sub=="COORDINATES ALREADY LOGGED","the terminal cannot be cracked twice")
+ck(qs==4 and state==2,"cracking the code recovers the coordinates")
+ck(dget(8)==1,"docking saves")
+
+-- Z leaves the minigame without consequence
+p.x=stations[5].x p.y=stations[5].y
+press(5)
+ck(state==4 and mg!=nil,"a container opens")
 press(4)
-ck(state==2,"Z undocks")
+ck(mg==nil and state==2,"Z leaves the minigame")
 
 -- death keeps the relics (they are the progress, and there is no money to strip)
-p.ore=7
+p.ore=3
 recover()
-ck(p.ore==7 and state==2,"recovery keeps the relics")
+ck(p.ore==3 and state==2,"recovery keeps the relics")
 ck(p.hp==p.mhp and p.fuel==p.mfuel,"recovery refits the ship")
 
--- leave: the rebuilt key opens the gate
+-- leave: the recovered coordinates open the gate
 p.x=g.x p.y=g.y
 press(5)
-ck(state==5,"X at the gate with the key starts the warp")
+ck(state==5,"X at the gate with the coordinates starts the warp")
 for i=1,60 do
  if state!=5 then break end
  press(5)

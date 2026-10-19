@@ -13,27 +13,6 @@ PORTNAME={ "pilot 1393", "handler rooke" }
 
 DY=80   -- open y of the text box
 
--- word-wrap a string, remembering each line's start offset in the source so the
--- typewriter can reveal it without words reflowing.
-local function wrap_off(s,w)
- local out={}
- local line=""
- local lo=1
- local i=1
- local n=#s
- while i<=n do
-  local j=i
-  while j<=n and sub(s,j,j)!=" " do j+=1 end
-  local word=sub(s,i,j-1)
-  if line=="" then line=word lo=i
-  elseif #line+1+#word<=w then line=line.." "..word
-  else add(out,{t=line,o=lo}) line=word lo=i end
-  i=j+1
- end
- if line!="" then add(out,{t=line,o=lo}) end
- return out
-end
-
 function dlg_start(id)
  dg={s=talks[id],i=1,ch=0,y=128,w=1,lines=nil,nm=talkname[id]}
 end
@@ -55,7 +34,7 @@ function update_dlg()
   dg.lines=nil
   return
  end
- if dg.lines==nil then dg.lines=wrap_off(st,27) end
+ if dg.lines==nil then dg.lines=wrap(st,27) end
  local total=#st
  if btnp(4) or btnp(5) then
   if dg.ch<total then dg.ch=total
@@ -97,24 +76,9 @@ function draw_dlg()
  end
 end
 
--- story helpers shared by chapters: advance a page, and draw a terminal page
+-- story helper shared by chapters: advance a page
 function next_spage()
  spg+=1
  spt=0
  if spg>#spages then state=2 end
-end
-
-function draw_term(pg)
- local n=spt*3
- local y=30
- for i=1,#pg.lines do
-  local s=pg.lines[i]
-  local shown=sub(s,1,clampi(n,0,#s))
-  for k in all(wrap(shown,29)) do
-   print(k,8,y,GT)
-   y+=8
-  end
-  n-=#s
- end
- if frame%30<15 then print(chr(16),8,y,GT) end
 end

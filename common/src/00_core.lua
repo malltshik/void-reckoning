@@ -160,18 +160,23 @@ function clamp_arena(x,y,m)
  return x,y
 end
 
--- split a string into word-wrapped lines no wider than w characters
+-- word-wrap a string to lines no wider than w characters. Each line is {t=line, o=start
+-- offset in the source} so a typewriter can reveal it without words reflowing. wrap("")
+-- returns one empty line (draw_term's cursor placement relies on it).
 function wrap(s,w)
- if s=="" then return {""} end
+ if s=="" then return {{t="",o=1}} end
  local out={}
  local cur=""
+ local lo=1
+ local pos=1
  for word in all(split(s," ")) do
   word=tostr(word) -- split() coerces numeric tokens (e.g. "1393") to numbers
   if cur=="" then cur=word
   elseif #cur+1+#word<=w then cur=cur.." "..word
-  else add(out,cur) cur=word end
+  else add(out,{t=cur,o=lo}) cur=word lo=pos end
+  pos+=#word+1
  end
- if cur!="" then add(out,cur) end
+ if cur!="" then add(out,{t=cur,o=lo}) end
  return out
 end
 

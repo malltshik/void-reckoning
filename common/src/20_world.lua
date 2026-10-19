@@ -124,7 +124,7 @@ function draw_flight()
  draw_player()
  camera()
   local st=nearest_station(20)
-  if st then pc(BX..(st.kind=="gate" and " jump" or " dock"),105,GT) end
+  if st then pc(BX..(st.kind=="gate" and " jump" or " "..(st.label or "dock")),105,GT) end
   -- dead space warning (past the system edge) / stranded warning (no fuel inside)
  local ad=arena_dist(p.x,p.y)
  if frame%30<20 then
