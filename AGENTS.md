@@ -250,7 +250,7 @@ Each chapter cart has its **own** 8192 tokens, but the engine is included in eve
 engine tokens are paid N times: **trimming `common/` is the best investment**, and engine
 additions must be justified. Current figure per chapter is in its own `AGENTS.md`.
 
-Where the tokens are (2026-10-19, Ch1 = 7981): engine **6243** (`10_entities` 1666, `40_ui` 1199,
+Where the tokens are (2026-10-19, Ch1 = 7987): engine **6249** (`10_entities` 1672, `40_ui` 1199,
 `20_world` 1091, `00_core` 910, `30_combat` 844, `60_dialogue` 528) + chapter content **~1740**
 (`72_story` 945, `71_station` 494, `70_world` 299). So a new chapter has only ~1.9k tokens for
 its own content, and the unbuilt negotiation layer / boss will not fit without trimming the

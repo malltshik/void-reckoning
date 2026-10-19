@@ -174,7 +174,7 @@ function update_drops()
   local ddy=p.y-o.y
   if abs(ddx)<40 and abs(ddy)<40 then
    local dd=sqrt(ddx*ddx+ddy*ddy)+0.001
-   if dd<34 then
+   if dd<34 and p.ore<p.mcargo then
     o.x+=ddx/dd*1.5
     o.y+=ddy/dd*1.5
    end

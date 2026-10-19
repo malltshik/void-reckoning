@@ -71,6 +71,14 @@ end
 printh("  (closest missile approach: "..near.."px, missiles left "..#missiles..")","p8log.txt")
 ck(#foes==0,"a missile fired off-axis homes in on the scout")
 
+-- full cargo: ore must not be magnetised / dragged along (bug: it stuck to the ship)
+drops={} p.ore=p.mcargo
+add(drops,{x=p.x+25,y=p.y,kind=1})
+local ox=drops[1].x
+tick(20)
+ck(#drops==1 and drops[1].x==ox,"full cargo does not pull ore in")
+drops={} p.ore=0
+
 -- soak: 1500 frames of flying around with a ship that cannot die
 p.hp=9000 p.mhp=9000 p.shd=9000 p.mshd=9000
 K[1]=true tick(300) K[1]=nil
