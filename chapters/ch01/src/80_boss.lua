@@ -1,1 +1,1 @@
--- 80_boss: The Paragon (chapter 10). Stub until Part III.
+-- 80_boss: The Paragon (chapter 10). Stub until later chapters.

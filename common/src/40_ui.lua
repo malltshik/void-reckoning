@@ -191,6 +191,6 @@ end
 function draw_ending()
  pc("CHAPTER 1 COMPLETE",48,GT)
  pc("THE CRATE AWAITS.",64,GT)
- pc("PART I - TO BE CONTINUED",82,GT)
+ pc("TO BE CONTINUED",82,GT)
  if frame%40<25 then pc("press "..BX,106,GT) end
 end

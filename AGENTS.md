@@ -2,7 +2,8 @@
 
 Read this first. It exists so a fresh session can rebuild full context without the
 original chat history. When in doubt, this file + `DESIGN.md` are the source of truth for
-engine/design; per-chapter story canon lives in `chapters/<ch>/lore.md`.
+engine/design; per-chapter story canon lives in `chapters/<ch>/lore.md` and per-chapter
+build notes in `chapters/<ch>/AGENTS.md`.
 
 ## 0. THE PRIME DIRECTIVE - LOG EVERY DECISION
 
@@ -11,7 +12,8 @@ chapter's `lore.md`) before the session ends. A decision that lives only in chat
 forever.
 
 - New design/mechanic decision -> `DESIGN.md`. New world/narrative/canon -> the chapter's
-  `chapters/<ch>/lore.md`.
+  `chapters/<ch>/lore.md`. Per-chapter build/flow/balance detail -> that chapter's
+  `chapters/<ch>/AGENTS.md` (keep the root file chapter-agnostic).
 - New technical convention, workaround, gotcha, or tooling fact -> add to
   **Common rules & gotchas** below (keep it rule-shaped, not a changelog).
 - Changed your mind? Do not silently overwrite: update the entry and note why (dated).
@@ -29,12 +31,12 @@ docked negotiation. Dark sci-fi tone (Bradbury / Strugatsky register).
 Full design: `DESIGN.md`. Story canon: per-chapter `chapters/<ch>/lore.md` (Ch1 written,
 Ch2 WIP) - lore is canon/tone, NOT verbatim script; the cart is authoritative for text.
 
-Release in 3 parts:
-- **Part I - demo (Ch1-3)**, ends on Twist 1 (the sealed cargo is empty).
-- **Part II - doubling (Ch4-6)**.
-- **Part III - resistance (Ch7-10)**.
+Released **chapter by chapter**: ten chapters (Ch1-10), each shipped as it's done. There is
+no pre-declared part structure. Story beats (chapter milestones, not groupings): **Ch3** -
+Twist 1 (the sealed cargo is empty); **Ch6** - the fork (defect, or die loyal); **Ch10** -
+The Paragon.
 
-Current status: **Part I, Chapter 1 vertical slice is implemented and passes headless
+Current status: **Chapter 1 vertical slice is implemented and passes headless
 validation.** Chapters 2-10 and the negotiation layer are not built yet.
 
 ## 2. Environment
@@ -129,7 +131,7 @@ validation.** Chapters 2-10 and the negotiation layer are not built yet.
 
 `common/src/*.lua` = **shared engine**; `chapters/<ch>/src/*.lua` = **chapter content**;
 one thin cart per chapter `#include`s both. Load order matters (globals). Run/test headless
-(`pico8 -x chapters\ch01\ch01.p8`) or in the browser web build (section 12).
+(`pico8 -x chapters\<ch>\<ch>.p8`) or in the browser web build (section 12).
 
 ```
 common/src/00_core.lua      init, state machine, reset, clampi, _update/_draw dispatch, camx/camy
@@ -143,17 +145,18 @@ common/tools/gen_gfx.py     sprite art -> __gfx__   (python common/tools/gen_gfx
 common/tools/gen_audio.py   sfx/music   -> __sfx__/__music__
 common/tools/gen_fontmap.py title font  -> __map__   (source: common/font_map.hex)
 common/font_map.hex         the 2048 custom-font bytes (XOR-able; see section 12)
-docs/                       GitHub Pages site (index.html + <chapter>.html/.js)
-build_web.ps1               exports every chapter cart to docs/ for Pages
-chapters/ch01/ch01.p8       the cart (#include + __gfx__/__label__/__map__/__sfx__/__music__)
-chapters/ch01/src/50_station.lua docking, services menu, economy actions (ECO table)
-chapters/ch01/src/70_story.lua   chapter flow, cutscenes, quest logic, jump sequence
-chapters/ch01/src/80_boss.lua    The Paragon (Ch10) - stub
+docs/index.html             hand-kept player: PICO-8 shell + chapter picker (loads ?cart=)
+docs/<chapter>.js           exported web player per cart (build output, committed)
+build_web.ps1               exports every chapter cart -> docs/<chapter>.js for Pages
+chapters/<ch>/<ch>.p8       the cart (#include + __gfx__/__label__/__map__/__sfx__/__music__)
+chapters/<ch>/src/*.lua     chapter content (station/economy, story/flow, boss stub)
+chapters/<ch>/AGENTS.md     per-chapter build notes (layout/balance for that chapter)
+chapters/<ch>/lore.md       per-chapter story canon
 tmp/                        gitignored: research/provenance + test harness carts (section 2)
 ```
 
 **`#include` base rule:** PICO-8 resolves includes **relative to the cart file's folder**
-(NOT `-root_path`). The cart in `chapters/ch01/` therefore uses
+(NOT `-root_path`). A cart in `chapters/<ch>/` therefore uses
 `#include ../../common/src/00_core.lua` + `#include src/50_station.lua`; scratch/harness
 carts kept in the repo **root** instead use `#include common/src/...` (see section 7).
 Include order: `00 01 10 20 30 40`, then ch `50_station`, then `60_dialogue`, then ch
@@ -178,7 +181,7 @@ only if the cart terminates. A cart with a live main loop runs forever, so build
 throwaway harness that drives the game and then calls `stop()`.
 
 Recipe: create a scratch cart in the repo **root** (so `common/src/...` resolves) or in
-`chapters/ch01/` (so `src/...` + `../../common/src/...` resolve):
+`chapters/<ch>/` (so `src/...` + `../../common/src/...` resolve):
 
 ```lua
 pico-8 cartridge // http://www.pico-8.com
@@ -210,7 +213,7 @@ exist**; run straight-line and let `-x` report the error with a line number.
 Measure the exact token count with a cart = the same `#include`s + `stop()` + N dummy
 lines `dN=1`. Each dummy is 3 tokens and `stop()` is 2, so real code =
 `reported - 3N - 2`. No overflow means `real <= 8192 - 3N - 2`; raise N until it overflows
-  to read the exact figure. Example (current): ch01 = **~7691 / 8192 (~501 free)**.
+  to read the exact figure. Each chapter's current figure lives in its `AGENTS.md`.
 
 ## 8. Patterns - DO
 
@@ -289,37 +292,14 @@ lines `dN=1`. Each dummy is 3 tokens and `stop()` is 2, so real code =
 - Game over / ending: `X` restarts, but only **after a short lockout** (`got`) so the
   death screen is readable.
 
-## 11. Chapter 1 as built
+## 11. Chapter-specific context
 
-- Cold-open: **Rooke dialogue** - it opens with 4 narrator lines (no portrait drawn,
-  `NN={w=0}`) carrying the Central Command briefing (`IMPERIUM CENTRAL COMMAND` /
-  `COURIER 1393 - BRIEFING` / `ASSET: SEALED` / `DESTINATION: BR-11K0`), then Rooke's face
-  -> **flight-into-wormhole cutscene** (ship races across space, is swallowed by the
-  'hole) -> wormhole tunnel -> corrupted-terminal page -> you wake adrift in a **system
-  disc**; fly past its soft edge and you enter empty **dead space** (blinking alert, no
-  spawns) forever. There is **no separate briefing screen** - it lives in `talks.intro`.
-- On the first Outpost dock the **outpost officer** hails you (reuses portrait 2 art);
-  until then the mission pane reads "no active orders. hail the outpost." (`ohint=false`).
-  The officer sets `ohint=true` / `qs=1` and points you at the work.
-- Mine ore -> dock Outpost -> SELL ORE (first sale sets `qs=2`) -> buy Hyper-Cell
-  (**250 $**, sets `qs=3`) -> fly to Jump Gate -> `X` -> **warp cutscene** (radial streaks
-  + 7 centred narration lines revealed `JPER=45` frames each). It **holds on the last
-  line and shows `X continue`** - it never auto-advances (`X` skips the reveal first) ->
-  "Chapter 1 complete".
-- Economy (start **40 $**, cell deliberately unaffordable): `ECO={oresell=10, cell=250,
-  repair=2, fuel=1, missile=15}`; scout bounty 15; **cargo cap `p.mcargo=10`**. Target:
-  **~25 ore (2.5 cargos) OR ~20 ore + 5 pirate kills ~= the cell**, plus fuel/repair.
-  Tunables in `ECO` (`50_station.lua`) + `foes_def` (`10_entities.lua`).
-- Foes: only `E_SCOUT` spawns here (`foes_def` trimmed to scout; later chapters re-add).
-  Authored Outpost (`150,110`) + Jump Gate (`400,400`); seeded planets/roids
-  (`ROID_CAP=22`, `ROID_RESPAWN=150` - solid rocks top back up over time); missiles now
-  damage solid rocks.
-- **Reinforcements**: `update_spawn` spawns a scout 150-210px off the player every ~20-30s
-  (`FOE_CAP=4` live), so exploring stays calm. `spawnt` is the timer.
-- Quest stages (`qs`): `1` salvage -> `2` sell -> `3` jump unlocked.
-- Station screen: status strip under the title (`$`@10, hull@38, fuel@88); menu items y26
-  step 11; `sub`/status text <=2 lines at y92; prompt y112. Ship menu (state 8): status
-  line y44, prompt y112.
+This file stays **chapter-agnostic**. Per-chapter detail lives with the chapter:
+
+- Build/flow/balance notes -> `chapters/<ch>/AGENTS.md` (Ch1: `chapters/ch01/AGENTS.md`).
+- Story canon -> `chapters/<ch>/lore.md`.
+
+If a note only matters for one chapter, put it there - not here.
 
 ## 12. Common rules & gotchas (durable - read before coding)
 
@@ -359,24 +339,27 @@ lines `dN=1`. Each dummy is 3 tokens and `stop()` is 2, so real code =
 **Cartridge size & web export (the 15,360-byte limit)**
 - Saving `.p8.png`/`.p8.rom` **and exporting the html web player** require the *compressed*
   code block < 15,360 bytes (manual 1.5); `.p8` is exempt. Code/strings compress ~2:1, so a
-  ~4 KB high-entropy hex literal is what pushed ch01 over ("failed: code block too large").
+  ~4 KB high-entropy hex literal is what pushed a cart over ("failed: code block too large").
   **Keep big raw data out of code** (the font lives in `__map__`; section 4). The `info()`
   command prints code/token/compressed sizes.
-- Web build lives in `docs/`: `index.html` + one `<chapter>.html`/`.js` per chapter.
-  Regenerate with `build_web.ps1`. **Export each cart with a bare filename and cwd = `docs/`**
-  (`pico8 -export ch01.html ..\chapters\ch01\ch01.p8`); otherwise the html embeds an absolute
-  `.js` path that breaks on the web. An export also needs a `__label__` section (capture the
-  running screen with `extcmd("label")` then `save`).
+- Web build lives in `docs/`: **one hand-kept `index.html`** (PICO-8's default shell + a
+  small chapter picker) that loads `?cart=<chapter>.js` (default `ch01.js`), plus one
+  exported `<chapter>.js` per chapter. The `.js` is self-contained (it only needs a
+  `<canvas>` + `Module.canvas`, which the shell already provides). Regenerate the `.js` with
+  `build_web.ps1`, which **exports with a bare filename and cwd = `docs/`**
+  (`pico8 -export <ch>.js ..\chapters\<ch>\<ch>.p8`). The shell in `index.html` is ~930 lines
+  of PICO-8 CSS/UI we now own - re-sync it if the engine's default plate changes.
 - **The web export CANNOT run in CI** (decided 2026-10-19): the `.js` embeds the proprietary
   PICO-8 runtime, so only the desktop engine can generate it. The license forbids
   redistributing the binary and it is too big for a repo secret, so there is no clean CI
-  route. Regenerate locally with `build_web.ps1` and **commit** `docs/*.html`/`*.js`;
-  GitHub Pages "deploy from branch `/docs`" republishes on every push. (The `.p8.png` cart
-  is NOT sufficient to rebuild the web player.)
+  route. Regenerate locally with `build_web.ps1` and **commit** `docs/*.js`; GitHub Pages
+  "deploy from branch `/docs`" republishes on every push. (The `.p8.png` cart is NOT
+  sufficient to rebuild the web player.)
 
 **Token budget (HARD 8192, per-chapter cart)**
-- ch01 currently **~7691/8192 (~501 free)**. Every feature added must be offset by
-  trimming the same cart; each chapter is its own cart, so they do not share the budget.
+- Each chapter's cart has its own **8192** token budget - they do **not** share it. Every
+  feature added must be offset by trimming the same cart; a chapter's current figure lives
+  in its `chapters/<ch>/AGENTS.md`.
 - The headless harness's **own code counts** toward the budget, so a normal `_smoke.p8`
   overflows near the limit. Test by temporarily hooking `_init()` (set state / call
   `dock`+`open_menu`) with `printh(...,"p8log.txt")`, running the **real cart** `-x`,
@@ -385,6 +368,19 @@ lines `dN=1`. Each dummy is 3 tokens and `stop()` is 2, so real code =
 
 ## 13. Changelog (brief - the full play-by-play lives in git/chat)
 
+- [2026-10-19] **Split per-chapter context out of the root `AGENTS.md`:** the Ch1 "as built"
+  notes moved to `chapters/ch01/AGENTS.md`; the root §11 is now a chapter-agnostic pointer.
+  Genericized the remaining ch01 examples (`<ch>`/`<cart>`) and moved the ch01 token figure
+  into that chapter file, so later-chapter work isn't burdened by Ch1 detail.
+- [2026-10-19] **Dropped the Part I/II/III structure:** released **chapter by chapter**
+  (Ch1-10), no pre-declared parts; Ch3/Ch6/Ch10 kept as story milestones. Updated
+  `DESIGN.md`/`README.md`/`chapters/ch01/lore.md`, the ending screen text (`TO BE
+  CONTINUED`, was "PART I - TO BE CONTINUED"), and re-exported the web player.
+- [2026-10-19] **Web player = one html + N js:** dropped the per-chapter exported `.html`.
+  `docs/index.html` is now the PICO-8 default shell (hand-kept) + a small chapter picker; it
+  loads `?cart=<chapter>.js` (default `ch01.js`). `build_web.ps1` exports only the `.js`.
+  Deleted `docs/ch01.html`. Trade-off: we now own the ~930-line shell (re-sync on engine
+  updates).
 - [2026-10-19] **CI decision:** no pipeline for the web build - the exported `.js` needs the
   proprietary PICO-8 engine (can't be run in CI; license/size). Exports stay a **local**
   `build_web.ps1` step committed to `docs/`; Pages deploy-from-branch publishes on push.
@@ -393,6 +389,7 @@ lines `dN=1`. Each dummy is 3 tokens and `stop()` is 2, so real code =
   it), removed the `play.bat` launchers (test in the browser / headless instead), and
   rewrote `docs/index.html` as a responsive two-pane chapter browser (chapter list left,
   selected chapter + player right; the list collapses to a top chip row on phones).
+  *(Superseded - `docs/index.html` is now the single player/shell; see the entry above.)*
 - [2026-10-19] **Web build + font-as-data:** the html web-player export failed with
   "code block too large" - the cart's *compressed* code exceeded the manual's 15,360-byte
   limit (a 4 KB hex font literal barely compresses). Moved the title font into the cart's

@@ -4,20 +4,24 @@
 > empire that owns him is built on slavery and genocide, and chooses a side.
 > Cold, dark, and explicit about what an empire costs.
 
-**Status:** design locked (post-grilling). Target: build the Ch1–3 vertical slice, then Parts II–III.
+**Status:** design locked (post-grilling). Built and released **chapter by chapter** (Ch1–10).
 **Story canon:** per-chapter `chapters/<ch>/lore.md` (Ch1 written, Ch2 WIP). It holds the story, world, and characters as prose/canon — **not** verbatim script; the cart's on-screen text is authoritative. Align narrative work to it.
 
 ---
 
-## 0. Release plan (three parts)
+## 0. Release plan
 
-| Part | Chapters | Content | Ends on |
-| :-- | :-- | :-- | :-- |
-| **I — Demo** | 1–3 | The sending, the thaw, the Imperium forward base, the empty crate | Twist 1 (the crate is empty) + first Resistance contact |
-| **II — The Doubting Episode** | 4–6 | Dirty orders, the road to **BR-11K0**, the dead world, the moral break | The Ch6 fork: defect, or die loyal |
-| **III — The Reckoning** | 7–10 | Joining the Resistance; the war back to the Imperium core | The Paragon / General Vane |
+Shipped **chapter by chapter**: ten chapters (Ch1–10), each released as it's finished. There
+is no pre-declared part structure — chapters stand on their own. Milestones along the way
+(story beats at specific chapters):
 
-Everything below is the full 10-chapter design; Part I is the build target first.
+| Chapter | Beat |
+| :-- | :-- |
+| 3 | **Twist 1** — the sealed crate is empty; first Resistance contact |
+| 6 | **The fork** — defect, or die loyal |
+| 10 | **The Paragon / General Vane** — the reckoning |
+
+Everything below is the full 10-chapter design.
 
 ---
 
@@ -288,7 +292,7 @@ chapters/ch01/ch01.p8       # thin cart: #include lines + gfx/label/map/sfx/musi
 chapters/ch01/src/50_station.lua  # dock services, economy
 chapters/ch01/src/70_story.lua    # chapter flow, quests, cutscenes
 chapters/ch01/src/80_boss.lua     # Paragon (Ch10 stub)
-docs/  build_web.ps1              # GitHub Pages web player (one per chapter)
+docs/  build_web.ps1              # Pages player: index.html shell + <ch>.js per cart
 tmp/                              # gitignored local scratch (research, test harnesses)
 DESIGN.md  AGENTS.md  chapters/<ch>/lore.md
 ```

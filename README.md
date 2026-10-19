@@ -6,8 +6,8 @@ system, and negotiation when you dock. Dark sci-fi tone.
 
 **▶ Play in your browser:** <https://malltshik.github.io/void-reckoning/>
 
-**Status:** Part I, **Chapter 1** is a playable vertical slice — mine ore, dock at the
-outpost, sell, buy a hyper-cell, jump out. It ends on the Part I twist. Chapters 2–10
+**Status:** **Chapter 1** is a playable vertical slice — mine ore, dock at the outpost,
+sell, buy a hyper-cell, jump out. The game is released chapter by chapter; Chapters 2–10
 and the docked negotiation layer are not built yet.
 
 ## Controls
@@ -31,8 +31,9 @@ Requires PICO-8 (v0.2.7):
 
 ## Browser build
 
-The GitHub Pages site under `docs/` hosts a standalone PICO-8 web player per chapter.
-Regenerate it after changing a cart with:
+The GitHub Pages site under `docs/` is one player page (`index.html`) plus one exported
+`<chapter>.js` per chapter. `index.html` loads `?cart=<chapter>.js` (default `ch01.js`)
+and offers a small chapter picker. Regenerate the `.js` after changing a cart with:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File build_web.ps1
@@ -48,7 +49,7 @@ common/tools/*.py     asset generators (sprites, audio, font map)
 common/font_map.hex   custom title font bytes, stored in each cart's map region
 chapters/ch01/        Chapter 1 cart + story src/ + lore.md
 chapters/ch02/        Chapter 2 (lore only, in progress)
-docs/                 GitHub Pages site (index.html + one web player per chapter)
+docs/                 GitHub Pages player (index.html shell + one <chapter>.js per cart)
 AGENTS.md             dev conventions, PICO-8 gotchas, token budget
 DESIGN.md             full game design
 ```

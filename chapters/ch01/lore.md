@@ -64,7 +64,7 @@ the scrubbed chart he does not yet understand, the officer who looks away in fea
 printed on a wall he cannot read.
 
 **Structural twists (locked, revealed later):**
-- **Twist 1 (end of Part I, Ch3):** the sealed crate is **empty**. There was never cargo,
+- **Twist 1 (Ch3):** the sealed crate is **empty**. There was never cargo,
   never a delivery, never a recipient - only a courier nobody would miss, sent to die.
 - **Twist 2 (Ch6):** the full truth - no mission, no cargo; he was classified *bio-social
   contamination*. He was never meant to come home.
@@ -93,7 +93,7 @@ Neither is revealed in Ch1. In Ch1 the crate is simply **sealed**, and he does n
 - **The Imperium** - see *The world*. The real antagonist of the story; Vane is only its
   face.
 - **Kesh / Lyra / Vane** - not in Ch1. Kesh (Resistance agent) first hails in Ch3; Lyra
-  (Resistance commander) becomes his commander in Part III; General Vane is the final
+  (Resistance commander) becomes his commander in later chapters; General Vane is the final
   antagonist (the Paragon, Ch10).
 
 ---
