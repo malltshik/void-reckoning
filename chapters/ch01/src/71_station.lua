@@ -23,9 +23,11 @@ function dock(s)
   {label="REFUEL ("..ECO.fuel.."$/UNIT)",act=function(m)
    local need=ceil(p.mfuel-p.fuel)
    if need<=0 then m.sub="FUEL FULL" return end
-   local cost=need*ECO.fuel
-   if p.credits>=cost then p.credits-=cost p.fuel=p.mfuel m.sub="REFUELED -"..cost.."$"
-   else m.sub="NOT ENOUGH $" end
+   local units=min(need,flr(p.credits/ECO.fuel))
+   if units<=0 then m.sub="NOT ENOUGH $" return end
+   p.credits-=units*ECO.fuel
+   p.fuel=min(p.mfuel,p.fuel+units)
+   m.sub="+"..units.." FUEL -"..units*ECO.fuel.."$"
   end},
   {label="SELL ORE ("..ECO.oresell.."$ EACH)",act=function(m)
    if p.ore<=0 then m.sub="NO ORE TO SELL" return end

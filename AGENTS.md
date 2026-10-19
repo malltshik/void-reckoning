@@ -250,9 +250,9 @@ Each chapter cart has its **own** 8192 tokens, but the engine is included in eve
 engine tokens are paid N times: **trimming `common/` is the best investment**, and engine
 additions must be justified. Current figure per chapter is in its own `AGENTS.md`.
 
-Where the tokens are (2026-10-19, Ch1 = 7987): engine **6249** (`10_entities` 1672, `40_ui` 1199,
-`20_world` 1091, `00_core` 910, `30_combat` 844, `60_dialogue` 528) + chapter content **~1740**
-(`72_story` 945, `71_station` 494, `70_world` 299). So a new chapter has only ~1.9k tokens for
+Where the tokens are (2026-10-19, Ch1 = 8008): engine **6249** (`10_entities` 1672, `40_ui` 1199,
+`20_world` 1091, `00_core` 910, `30_combat` 844, `60_dialogue` 528) + chapter content **~1760**
+(`72_story` 945, `71_station` 515, `70_world` 299). So a new chapter has only ~1.9k tokens for
 its own content, and the unbuilt negotiation layer / boss will not fit without trimming the
 engine or leaving unused subsystems out of a chapter's `#include` list (DESIGN section 13). If you are out of room: measure first (`p8check tokens`), then look for
 duplicated helpers (`wrap` vs `wrap_off`), one-use locals, and defaults for params every caller

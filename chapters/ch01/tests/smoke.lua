@@ -106,6 +106,12 @@ press(3)
 p.fuel=50 p.credits=100
 press(5)
 ck(p.fuel==p.mfuel and p.credits==100-50*ECO.fuel,"refuel")
+p.fuel=50 p.credits=10
+press(5)
+ck(p.fuel==60 and p.credits==0,"a short wallet refuels only what it can afford")
+p.fuel=70 p.credits=0
+press(5)
+ck(p.fuel==70 and p.credits==0,"no money, no fuel")
 press(3)
 p.credits=0 p.ore=4
 press(5)
