@@ -188,6 +188,9 @@ DON'T
 - Don't put chapter content in `common/` (talks, stations, foe stats, ending text...). The engine
   only calls the hooks in the chapter contract.
 - Don't reorder RNG calls in `load_system` casually - they define the map (check `shots`).
+- Don't hand a cart with live `#include`s to the multicart `-export` as an *extra*: PICO-8 resolves
+  its includes against the main cart's folder, so it compiles the wrong chapter. Flatten first
+  (`p8check.py bundle` / `flatten_includes`).
 - Don't leave scratch carts in the repo (`_*.p8`, `chapters/*/_h/` are gitignored and cleaned
   by the tools). Don't blow the token budget with clever generality; measure with `p8check tokens`.
 - Don't trust a visual/feel change without a playtest, and don't commit/push unasked.
@@ -255,7 +258,7 @@ Each chapter cart has its **own** 8192 tokens, but the engine is included in eve
 engine tokens are paid N times: **trimming `common/` is the best investment**, and engine
 additions must be justified. Current figure per chapter is in its own `AGENTS.md`.
 
-Current figures (2026-10-19): **Ch1 = 8156 / 8192 (36 free)**, **Ch2 = 8079 / 8192 (113 free)**.
+Current figures (2026-10-19): **Ch1 = 8156 / 8192 (36 free)**, **Ch2 = 8090 / 8192 (102 free)**.
 The shared engine is ~6.3k, so a chapter gets only ~1.5-1.8k for its own content.
 `50_negotiation.lua` is ~378 tokens and is included only by chapters that use `negs` (Ch1 omits
 it, so Ch1 pays nothing for the second pillar). Ch2 fit by cutting the labour platform, BUY
@@ -303,10 +306,13 @@ starting a chapter, copy the previous cart so the label and data come along.
   `p8check.py size ch01` estimates the room left (~4.7k compressed bytes at the handover).
 - **Multicart bundle (built 2026-10-19):** `build_web.ps1` also runs `p8check.py bundle` ->
   `docs/game.html` + `docs/game.js` (main cart as the pico8 argument, extras inside the `-export`
-  string, run from `tmp/web` with **relative, space-free paths** - an absolute path containing e.g.
-  `Artem Gavrilov` is split on the space and the export comes out empty/incomplete). Both files are
+  string, run from `tmp/web` with **relative, space-free paths** - the export string is lowercased
+  and an absolute path containing e.g. `Artem Gavrilov` is split on its space). Both files are
   committed build outputs alongside the per-chapter `.js`. Headless `-x` reports `load()`'s
   resolvability but does **not** actually swap carts, so chaining is only exercised by the bundle.
+  **The extras must be include-flattened before export** (p8check does it): PICO-8 resolves an
+  extra cart's `#include`s relative to the **main** cart's folder, so without flattening every
+  extra silently compiles the first chapter's content (ch02 in the bundle once ran Ch1's code).
 - **Audio licence:** the soundtrack is "Pico-8 Tunes Vol. 1" by Gruber & krajzeg and the gameplay
   SFX are Gruber's "Pico-8 SFX Pack!" (both CC BY-NC-SA, **non-commercial**). Attribution (title
   screen + web page) must stay. Both **must be replaced** before any paid release (Steam) - see
@@ -355,9 +361,14 @@ starting a chapter, copy the previous cart so the label and data come along.
   chaining hooks are in.
 ## 14. Changelog (brief - full detail is in git)
 
+- [2026-10-19] **Multicart extras flattened (bugfix).** PICO-8 resolves an extra cart's `#include`s
+  against the **main** cart's folder, so the bundle's ch02 was silently compiling Ch1's chapter
+  code. `p8check.py bundle` now inlines includes (`flatten_includes`) before exporting; verified
+  with temporary marker strings (ch02's own sources now drive its ROM). Also guards against
+  re-buying Ch2 clearance and shows the bribe's cost. Ch2 = 8090/8192 (102 free).
 - [2026-10-19] **Chapter 2 vertical slice (placeholder script).** Kaelus Prime checkpoint: arrival
   dialogue -> check-in -> **dockmaster clearance negotiation** (bribe 100$, bluff -> flagged) ->
-  gate -> warp. `chapters/ch02/src` + adapted smoke/shots. **8079/8192 tokens (113 free)** - fit by
+  gate -> warp. `chapters/ch02/src` + adapted smoke/shots. **8090/8192 tokens (102 free)** - fit by
   cutting the labour platform, BUY MISSILE and the raider from the first draft. All Ch2 content
   text is a stand-in for the author's script; `docs/index.html` adds ch02 to the picker
   (`p8_cart_ver` 4).

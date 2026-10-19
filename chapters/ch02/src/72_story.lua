@@ -35,7 +35,7 @@ talkname={checkin="kaelus control"}
 negs={
  clearance={who=2,name="dockmaster",start="open",n={
   open={t="so the ghost courier walks in. sealed crate, no manifest. give me one reason i don't space you.",tm=300,to="bluff",o={
-   {t="offer a bribe",c=100,to="paid"},
+    {t="offer a bribe (100$)",c=100,to="paid"},
    {t="claim imperium property",to="bluff"},
   }},
   paid={t="credits and no questions. stamped. the gate is yours.",res=1,go=function() qs=2 end},

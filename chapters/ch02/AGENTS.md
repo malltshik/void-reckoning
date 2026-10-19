@@ -6,7 +6,7 @@ Story canon/tone: `chapters/ch02/lore.md`.
 **Status: playable vertical slice, PLACEHOLDER script.** Every string in `src/72_story.lua`
 is a stand-in for the author's real Ch2 script - replace the text, keep the hooks/flow.
 
-- **Cart budget:** 8079 / 8192 tokens (113 free). It includes `common/src/50_negotiation.lua`
+- **Cart budget:** 8090 / 8192 tokens (102 free). It includes `common/src/50_negotiation.lua`
   (~378 tokens); Ch1 does not. Measure with `p8check tokens ch02`.
 - **Verification:** `p8check all ch02` = tokens + smoke (scripted logic) + 13 staged screens
   (`tmp/shots/ch02_*.png`) with a text-clipping sweep.
@@ -32,7 +32,8 @@ chapters/ch02/tests/smoke.lua     logic playthrough      chapters/ch02/tests/sho
 3. **Clearance negotiation** (state 3, `negs.clearance`): `open` is timed (`tm=300`) and falls to
    `bluff` if you stall. Options: **offer a bribe** (`c=100`) -> `paid` (`res=1`, `qs=2`, clean) or
    **claim imperium property** -> `bluff` (`res=2`, `qs=2`, `ambush=true`). Both open the gate; the
-   bluff flags you.
+   bluff flags you. The menu entry stays until you undock, so it refuses a second try
+   ("CLEARANCE GRANTED") - smoke asserts it.
 4. **Jump gate** (400,400): `start_jump` needs `qs>=2`, then the engine warp with this chapter's
    `jlines`; `jump_end()` calls `load("ch03")` (falls back to the title if absent).
 5. **Ambush:** undocking via `leave_station()` spends `ambush` and calls `ch_ambush()` (3 scouts).

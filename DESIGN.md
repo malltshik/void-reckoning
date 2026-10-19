@@ -285,7 +285,7 @@ dozen projectiles/particles. Off-screen sim is not culled (the field is small).
 **Token budget (hard 8,192 per cart) — reality check.** The original plan was an even split across
 systems (flight 450, enemy AI 900, negotiation 700, boss 700, …). As built (2026-10-19), the shared
 engine (`common/src`) is **~6.3k tokens** and every chapter cart pays it again, leaving ~1.5–1.8k for
-chapter content. Measured: **Ch1 = 8,156 / 8,192 (36 free)**, **Ch2 = 8,079 / 8,192 (113 free)**.
+chapter content. Measured: **Ch1 = 8,156 / 8,192 (36 free)**, **Ch2 = 8,090 / 8,192 (102 free)**.
 The negotiation engine is `common/src/50_negotiation.lua` at **~378 tokens**, and it is *optional* -
 only chapters that define `negs` include it (Ch1 omits it and pays nothing for the second pillar).
 
@@ -328,7 +328,8 @@ PICO-8's multicart `EXPORT` bundles up to 32 carts and lets each `load()` anothe
 local file. `p8check.py bundle` (run by `build_web.ps1`) emits `docs/game.html` + `docs/game.js`
 from the comment-stripped sources; the main cart is the pico8 argument and the extras go inside the
 `-export` string, using **relative, space-free paths** (an absolute path containing a space breaks
-the export). A chapter ends with `jump_end()` → `load("chNN")` (returns `false` if the sibling is
+the export). Extras are **include-flattened** first: PICO-8 resolves an extra's `#include`s against
+the main cart's folder, so a non-flattened extra would compile the wrong chapter's content. A chapter ends with `jump_end()` → `load("chNN")` (returns `false` if the sibling is
 absent, so a lone cart falls back to the title); progress rides the shared `cartdata("vrk1")` id.
 `load(name,breadcrumb,param)` passes `param` to the new cart via `stat(6)` (not used yet). Caveats:
 multicart is **not** supported on the BBS, headless `-x` does not actually swap carts (only the

@@ -394,9 +394,29 @@ def chapters():
     return [n for n in sorted(os.listdir(base)) if os.path.exists(cart_path(n))]
 
 
+def flatten_includes(path):
+    """Inline every `#include foo.lua` in a cart (they are not recursive) so the cart is
+    self-contained. Required for multicart extras: PICO-8's exporter resolves their
+    includes relative to the MAIN cart's folder, not the extra cart's - without this,
+    every extra compiles the first chapter's content (seen: ch02 in the bundle ran ch01)."""
+    base = os.path.dirname(path)
+    out = []
+    for line in read(path).splitlines(True):
+        m = re.match(r"\s*#include\s+(\S+)\s*$", line, re.I)
+        if m:
+            inc = os.path.normpath(os.path.join(base, m.group(1)))
+            text = read(inc)
+            out.append(text)
+            if not text.endswith("\n"):
+                out.append("\n")
+        else:
+            out.append(line)
+    write(path, "".join(out))
+
+
 def release_tree_all(chs):
     """Like release_tree but for several chapters in one tree (shared stripped common/src).
-    Returns the list of stripped cart paths for PICO-8's multicart export."""
+    Carts are include-flattened; returns their paths for PICO-8's multicart export."""
     import shutil
     web = os.path.join(ROOT, "tmp", "web")
     shutil.rmtree(web, ignore_errors=True)
@@ -412,9 +432,10 @@ def release_tree_all(chs):
         for name in sorted(os.listdir(os.path.join(ROOT, rel))):
             if name.endswith(".lua"):
                 write(os.path.join(web, rel, name), strip_lua_comments(read(os.path.join(ROOT, rel, name))))
-        dest = os.path.join("tmp", "web", "chapters", ch, ch + ".p8")
-        write(os.path.join(ROOT, dest), read(cart_path(ch)))
-        carts.append(os.path.join(ROOT, dest))
+        dest = os.path.join(web, "chapters", ch, ch + ".p8")
+        write(dest, read(cart_path(ch)))
+        flatten_includes(dest)
+        carts.append(dest)
     return carts
 
 

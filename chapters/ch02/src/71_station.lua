@@ -40,7 +40,10 @@ function dock(s)
  }
  -- the checkpoint's dockmaster holds the gate clearance (the chapter's negotiation)
  if s.kind=="kaelus" and qs==1 then
-  add(items,{label="DOCKMASTER (CLEARANCE)",act=function() neg_start("clearance") end})
+  add(items,{label="DOCKMASTER (CLEARANCE)",act=function(m)
+   if qs>=2 then m.sub="CLEARANCE GRANTED" return end
+   neg_start("clearance")
+  end})
  end
  sm=menu_new(s.kind=="kaelus" and "KAELUS CHECKPOINT" or "KAELUS SERVICES",items)
  sfx(6,3)
