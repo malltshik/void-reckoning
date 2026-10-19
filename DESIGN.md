@@ -289,6 +289,7 @@ chapters/ch01/src/50_station.lua  # dock services, economy
 chapters/ch01/src/70_story.lua    # chapter flow, quests, cutscenes
 chapters/ch01/src/80_boss.lua     # Paragon (Ch10 stub)
 docs/  build_web.ps1              # GitHub Pages web player (one per chapter)
+tmp/                              # gitignored local scratch (research, test harnesses)
 DESIGN.md  AGENTS.md  chapters/<ch>/lore.md
 ```
 

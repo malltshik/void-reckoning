@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Void Reckoning — play in your browser</title>
 <style>
   :root {
     --bg: #0b0d12;
     --panel: #131722;
+    --panel2: #0f131d;
     --ink: #cfd8e3;
     --dim: #7c8797;
     --steel: #4aa3c7;
@@ -15,104 +16,265 @@
     --line: #232a38;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
+  html, body { height: 100%; }
   body {
+    margin: 0;
     background: var(--bg);
     color: var(--ink);
     font: 15px/1.6 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-    padding: 28px 18px 60px;
+    overflow: hidden;
   }
-  .wrap { max-width: 820px; margin: 0 auto; }
-  header { text-align: center; margin-bottom: 26px; }
-  h1 {
-    font-size: 34px; letter-spacing: 6px; margin: 0 0 6px;
-    color: #eef4fb; text-shadow: 0 0 14px rgba(74,163,199,.35);
-  }
-  .tag { color: var(--steel); margin: 0; }
-  .tag2 { color: var(--dim); margin: 4px 0 0; font-size: 13px; }
-  h2 {
-    font-size: 15px; letter-spacing: 3px; text-transform: uppercase;
-    color: var(--amber); margin: 0 0 12px; font-weight: 600;
-  }
-  section {
-    background: var(--panel); border: 1px solid var(--line);
-    border-radius: 10px; padding: 16px 18px; margin-bottom: 18px;
-  }
-  .player { display: flex; justify-content: center; }
-  iframe {
-    width: 750px; max-width: 100%; height: 680px; border: 0;
-    border-radius: 6px; background: #000;
-  }
-  .row { display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; align-items: baseline; }
   a { color: var(--steel); text-decoration: none; }
   a:hover { text-decoration: underline; }
-  .btn {
-    display: inline-block; border: 1px solid var(--steel); border-radius: 6px;
-    padding: 7px 14px; color: var(--steel); margin-top: 14px;
+
+  .app {
+    display: grid;
+    grid-template-columns: 264px 1fr;
+    height: 100vh;
+    height: 100dvh;
   }
-  .btn:hover { background: rgba(74,163,199,.12); text-decoration: none; }
-  kbd {
-    background: #1c2331; border: 1px solid var(--line); border-bottom-width: 2px;
-    border-radius: 4px; padding: 1px 6px; color: #eef4fb; font-size: 12px;
+
+  /* ---- left: chapter selection ---- */
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 22px 18px;
+    background: var(--panel);
+    border-right: 1px solid var(--line);
   }
-  ul.chapters { list-style: none; margin: 0; padding: 0; }
-  ul.chapters li {
-    display: flex; justify-content: space-between; padding: 9px 0;
-    border-bottom: 1px solid var(--line);
+  .brand h1 {
+    margin: 0;
+    font-size: 26px;
+    line-height: 1.15;
+    letter-spacing: 4px;
+    color: #eef4fb;
+    text-shadow: 0 0 14px rgba(74,163,199,.35);
   }
-  ul.chapters li:last-child { border-bottom: 0; }
-  .soon { color: var(--dim); }
-  footer { color: var(--dim); font-size: 12px; text-align: center; margin-top: 26px; }
-  footer a { color: var(--dim); }
-  .keys div { padding: 3px 0; }
-  .keys .k { color: var(--amber); }
+  .brand .tag { margin: 8px 0 0; color: var(--steel); font-size: 12px; }
+  .brand .tag2 { margin: 2px 0 0; color: var(--dim); font-size: 11px; }
+
+  .chapters { display: flex; flex-direction: column; gap: 6px; }
+  .ch {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 11px;
+    text-align: left;
+    font: inherit;
+    color: var(--ink);
+    background: var(--panel2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .ch:hover { border-color: var(--steel); }
+  .ch .num { color: var(--dim); font-size: 12px; letter-spacing: 1px; }
+  .ch .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ch .tagx { color: var(--dim); font-size: 11px; }
+  .ch[aria-pressed="true"] {
+    border-color: var(--amber);
+    background: rgba(224,163,58,.10);
+  }
+  .ch[aria-pressed="true"] .num { color: var(--amber); }
+  .ch[aria-pressed="true"] .tagx { color: var(--amber); }
+
+  .credit { margin: auto 0 0; color: var(--dim); font-size: 11px; line-height: 1.5; }
+  .credit a { color: var(--dim); }
+
+  /* ---- right: selected chapter + player ---- */
+  .main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .info { flex: 0 0 auto; padding: 16px 22px 13px; border-bottom: 1px solid var(--line); }
+  .info .part {
+    margin: 0 0 4px; color: var(--amber);
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+  }
+  .info h2 { margin: 0; font-size: 20px; color: #eef4fb; letter-spacing: 1px; }
+  .info .desc { margin: 8px 0 0; color: var(--ink); max-width: 68ch; }
+  .info .ctrls { margin: 10px 0 0; color: var(--dim); font-size: 12px; }
+  .info .ctrls b { color: var(--ink); font-weight: 600; }
+  .info .open { margin-left: 4px; }
+  .info .row { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
+
+  .stage {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 14px 22px 20px;
+    display: flex;
+  }
+  #player {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 8px;
+    background: #000;
+  }
+  .soon-panel {
+    flex: 1 1 auto;
+    display: grid;
+    place-content: center;
+    gap: 6px;
+    text-align: center;
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    color: var(--dim);
+    background: var(--panel);
+  }
+  .soon-panel .big { color: var(--ink); font-size: 18px; letter-spacing: 2px; }
+  [hidden] { display: none !important; }
+
+  /* ---- phones: collapse the chapter list into a top bar ---- */
+  @media (max-width: 780px) {
+    body { overflow: auto; }
+    .app {
+      display: flex; flex-direction: column; height: auto;
+      min-height: 100vh; min-height: 100dvh;
+    }
+    .side {
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+      overflow: visible;
+      padding: 10px 12px;
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand h1 { font-size: 15px; letter-spacing: 2px; white-space: nowrap; }
+    .brand .tag, .brand .tag2, .credit { display: none; }
+    .chapters {
+      flex-direction: row;
+      gap: 8px;
+      flex: 1 1 auto;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .ch { grid-template-columns: auto auto; padding: 7px 11px; white-space: nowrap; font-size: 12px; }
+    .ch .tagx { display: none; }
+    .info { padding: 13px 15px 11px; }
+    .info h2 { font-size: 17px; }
+    .info .desc { font-size: 13px; }
+    .stage { flex: 0 0 auto; height: 66vh; padding: 10px 12px 16px; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="app">
 
-  <header>
-    <h1>VOID RECKONING</h1>
-    <p class="tag">a top-down space action-RPG for the PICO-8 fantasy console</p>
-    <p class="tag2">Part I · Chapter 1 — vertical slice</p>
-  </header>
-
-  <section>
-    <div class="row">
-      <h2 style="margin:0">Chapter 1 — Courier 1393</h2>
-      <a href="ch01.html">open full window ↗</a>
+  <aside class="side">
+    <div class="brand">
+      <h1>VOID RECKONING</h1>
+      <p class="tag">a top-down space action-RPG</p>
+      <p class="tag2">for the PICO-8 fantasy console</p>
     </div>
-    <div class="player">
-      <iframe src="ch01.html" title="Void Reckoning — Chapter 1"
+
+    <nav class="chapters" id="chapterList" aria-label="Chapters">
+      <button class="ch" type="button" data-ch="ch01" aria-pressed="true">
+        <span class="num">01</span><span class="nm">Courier 1393</span><span class="tagx">play</span>
+      </button>
+      <button class="ch" type="button" data-ch="ch02" aria-pressed="false">
+        <span class="num">02</span><span class="nm">TBA</span><span class="tagx">soon</span>
+      </button>
+      <button class="ch" type="button" data-ch="ch03" aria-pressed="false">
+        <span class="num">03</span><span class="nm">TBA</span><span class="tagx">soon</span>
+      </button>
+    </nav>
+
+    <p class="credit">
+      Built with <a href="https://www.lexaloffle.com/pico-8.php">PICO-8</a>.<br>
+      Music: “Pico-8 Tunes Vol. 1” by Gruber &amp; krajzeg (CC BY-NC-SA).<br>
+      Part I ends on Chapter 3.
+    </p>
+  </aside>
+
+  <main class="main">
+    <header class="info">
+      <p class="part" id="part">Part I · the demo</p>
+      <div class="row">
+        <h2 id="chTitle">Chapter 1 — Courier 1393</h2>
+        <a class="open" id="openLink" href="ch01.html" target="_blank" rel="noopener">full window ↗</a>
+      </div>
+      <p class="desc" id="chDesc"></p>
+      <p class="ctrls">
+        <b>Arrows</b> fly · <b>X</b> fire / confirm / dock · <b>Z</b> missile / cancel ·
+        <b>Enter</b> ship menu
+      </p>
+    </header>
+
+    <div class="stage">
+      <iframe id="player" src="ch01.html" title="Void Reckoning — Chapter 1"
               allowfullscreen scrolling="no" loading="lazy"></iframe>
+      <div class="soon-panel" id="soon" hidden>
+        <span class="big">IN DEVELOPMENT</span>
+        <span>This chapter isn't playable yet — check back soon.</span>
+      </div>
     </div>
-  </section>
-
-  <section>
-    <h2>Controls</h2>
-    <div class="keys">
-      <div><span class="k">Arrows</span> — fly (8-way)</div>
-      <div><span class="k">X</span> — fire / confirm / dock · hold to charge the gun</div>
-      <div><span class="k">Z</span> — fire a missile / cancel / undock</div>
-      <div><span class="k">Enter</span> — ship menu (missions · inventory)</div>
-    </div>
-  </section>
-
-  <section>
-    <h2>Chapters</h2>
-    <ul class="chapters">
-      <li><a href="ch01.html">1 — Courier 1393</a> <span>play</span></li>
-      <li><span>2 — TBA</span> <span class="soon">in development</span></li>
-      <li><span>3 — TBA</span> <span class="soon">in development</span></li>
-    </ul>
-  </section>
-
-  <footer>
-    Built with <a href="https://www.lexaloffle.com/pico-8.php">PICO-8</a>.
-    Music: “Pico-8 Tunes Vol. 1” by Gruber &amp; krajzeg (CC BY-NC-SA).
-    Demo — Part I ends on Chapter 3.
-  </footer>
+  </main>
 
 </div>
+
+<script>
+  const CH = {
+    ch01: {
+      part: "Part I · the demo",
+      title: "Chapter 1 — Courier 1393",
+      desc: "You wake adrift after a wormhole jump: sealed cargo, no orders, one dead " +
+            "system. Mine ore, dock the outpost, buy a hyper-cell and jump out — or be " +
+            "picked apart in the dark.",
+      src: "ch01.html"
+    },
+    ch02: {
+      part: "Part I · the demo",
+      title: "Chapter 2 — TBA",
+      desc: "In development. The demo continues past the jump gate."
+    },
+    ch03: {
+      part: "Part I · the demo",
+      title: "Chapter 3 — TBA",
+      desc: "In development. Part I ends here."
+    }
+  };
+
+  const list = document.getElementById("chapterList");
+  const partEl = document.getElementById("part");
+  const titleEl = document.getElementById("chTitle");
+  const descEl = document.getElementById("chDesc");
+  const iframe = document.getElementById("player");
+  const soon = document.getElementById("soon");
+  const openLink = document.getElementById("openLink");
+
+  function select(id) {
+    const c = CH[id];
+    if (!c) return;
+    partEl.textContent = c.part;
+    titleEl.textContent = c.title;
+    descEl.textContent = c.desc;
+    for (const b of list.children) {
+      b.setAttribute("aria-pressed", String(b.dataset.ch === id));
+    }
+    if (c.src) {
+      iframe.hidden = false;
+      soon.hidden = true;
+      if (iframe.getAttribute("src") !== c.src) iframe.setAttribute("src", c.src);
+      openLink.hidden = false;
+      openLink.href = c.src;
+    } else {
+      iframe.hidden = true;
+      soon.hidden = false;
+      openLink.hidden = true;
+    }
+  }
+
+  list.addEventListener("click", (e) => {
+    const b = e.target.closest(".ch");
+    if (b) select(b.dataset.ch);
+  });
+
+  select("ch01");
+</script>
 </body>
 </html>

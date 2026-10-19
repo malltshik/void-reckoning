@@ -28,8 +28,6 @@ docked negotiation. Dark sci-fi tone (Bradbury / Strugatsky register).
 
 Full design: `DESIGN.md`. Story canon: per-chapter `chapters/<ch>/lore.md` (Ch1 written,
 Ch2 WIP) - lore is canon/tone, NOT verbatim script; the cart is authoritative for text.
-Reference-cart teardown / ideas to port: `RESEARCH.md` (+ `research/<cart>/` for
-provenance - third-party carts there are study-only, never ship them).
 
 Release in 3 parts:
 - **Part I - demo (Ch1-3)**, ends on Twist 1 (the sealed cargo is empty).
@@ -54,6 +52,9 @@ validation.** Chapters 2-10 and the negotiation layer are not built yet.
     commits need `git -c user.name=... -c user.email=...`.)
 - `grep` tool fails on the huge single-line source HTML
   (`Ripgrep JSON record exceeded 65536 bytes`). Use PowerShell string ops for that file.
+- **`tmp/`** (gitignored) holds local-only scratch: `tmp/research/` (third-party reference
+  carts + `tmp/RESEARCH.md` teardown notes - study only, never ship) and throwaway test
+  harness carts. Nothing in it is tracked; do not reference it from tracked docs.
 
 ## 3. Workflow (non-negotiable)
 
@@ -127,8 +128,8 @@ validation.** Chapters 2-10 and the negotiation layer are not built yet.
 ## 6. Architecture (monorepo: shared engine + one cart per chapter)
 
 `common/src/*.lua` = **shared engine**; `chapters/<ch>/src/*.lua` = **chapter content**;
-one thin cart per chapter `#include`s both. Load order matters (globals). Root `play.bat`
-launches `chapters\ch01\ch01.p8`.
+one thin cart per chapter `#include`s both. Load order matters (globals). Run/test headless
+(`pico8 -x chapters\ch01\ch01.p8`) or in the browser web build (section 12).
 
 ```
 common/src/00_core.lua      init, state machine, reset, clampi, _update/_draw dispatch, camx/camy
@@ -145,10 +146,10 @@ common/font_map.hex         the 2048 custom-font bytes (XOR-able; see section 12
 docs/                       GitHub Pages site (index.html + <chapter>.html/.js)
 build_web.ps1               exports every chapter cart to docs/ for Pages
 chapters/ch01/ch01.p8       the cart (#include + __gfx__/__label__/__map__/__sfx__/__music__)
-chapters/ch01/play.bat      per-chapter launcher
 chapters/ch01/src/50_station.lua docking, services menu, economy actions (ECO table)
 chapters/ch01/src/70_story.lua   chapter flow, cutscenes, quest logic, jump sequence
 chapters/ch01/src/80_boss.lua    The Paragon (Ch10) - stub
+tmp/                        gitignored: research/provenance + test harness carts (section 2)
 ```
 
 **`#include` base rule:** PICO-8 resolves includes **relative to the cart file's folder**
@@ -366,6 +367,12 @@ lines `dN=1`. Each dummy is 3 tokens and `stop()` is 2, so real code =
   (`pico8 -export ch01.html ..\chapters\ch01\ch01.p8`); otherwise the html embeds an absolute
   `.js` path that breaks on the web. An export also needs a `__label__` section (capture the
   running screen with `extcmd("label")` then `save`).
+- **The web export CANNOT run in CI** (decided 2026-10-19): the `.js` embeds the proprietary
+  PICO-8 runtime, so only the desktop engine can generate it. The license forbids
+  redistributing the binary and it is too big for a repo secret, so there is no clean CI
+  route. Regenerate locally with `build_web.ps1` and **commit** `docs/*.html`/`*.js`;
+  GitHub Pages "deploy from branch `/docs`" republishes on every push. (The `.p8.png` cart
+  is NOT sufficient to rebuild the web player.)
 
 **Token budget (HARD 8192, per-chapter cart)**
 - ch01 currently **~7691/8192 (~501 free)**. Every feature added must be offset by
@@ -378,6 +385,14 @@ lines `dN=1`. Each dummy is 3 tokens and `stop()` is 2, so real code =
 
 ## 13. Changelog (brief - the full play-by-play lives in git/chat)
 
+- [2026-10-19] **CI decision:** no pipeline for the web build - the exported `.js` needs the
+  proprietary PICO-8 engine (can't be run in CI; license/size). Exports stay a **local**
+  `build_web.ps1` step committed to `docs/`; Pages deploy-from-branch publishes on push.
+- [2026-10-19] **Repo tidy + two-pane landing page:** moved `research/` + `RESEARCH.md` into
+  a gitignored `tmp/` (scratch/provenance lives there now; tracked docs no longer reference
+  it), removed the `play.bat` launchers (test in the browser / headless instead), and
+  rewrote `docs/index.html` as a responsive two-pane chapter browser (chapter list left,
+  selected chapter + player right; the list collapses to a top chip row on phones).
 - [2026-10-19] **Web build + font-as-data:** the html web-player export failed with
   "code block too large" - the cart's *compressed* code exceeded the manual's 15,360-byte
   limit (a 4 KB hex font literal barely compresses). Moved the title font into the cart's

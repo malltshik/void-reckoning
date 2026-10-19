@@ -1,4 +1,8 @@
-# PICO-8 headless test scratch (created in the repo root or a chapter folder)
+# Local scratch: research/provenance carts and test harness carts.
+# Not part of the shipped repo.
+tmp/
+
+# PICO-8 headless test output (written to the repo root)
 p8log.txt
 _o.txt
 _e.txt

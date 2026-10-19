@@ -23,7 +23,7 @@ At a station: up/down to select, **X** to buy, **Z** to undock.
 
 ## Play locally
 
-Requires PICO-8 (v0.2.7). Either double-click `play.bat`, or:
+Requires PICO-8 (v0.2.7):
 
 ```
 "C:\Program Files (x86)\PICO-8\pico8.exe" chapters\ch01\ch01.p8
@@ -59,7 +59,6 @@ generators (`python common/tools/<tool>.py chapters/ch01/ch01.p8`).
 ## Credits & license
 
 - Code, art and design: malltshik.
-- Music: **Pico-8 Tunes Vol. 1** by Gruber & krajzeg (CC BY-NC-SA) — see
-  `research/pico_tunes_vol1/`. **Non-commercial.**
-- `research/` holds third-party carts studied for reference only; none of their code or
-  assets ship in this game.
+- Music: **Pico-8 Tunes Vol. 1** by Gruber & krajzeg (CC BY-NC-SA). **Non-commercial.**
+- Third-party carts were studied for reference only; none of their code or assets ship in
+  this game.
