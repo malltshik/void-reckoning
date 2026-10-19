@@ -1,9 +1,8 @@
 -- 73_combat: XR-7PO's combat rules. These override engine sim functions because the rules
 -- differ (see the header of 70_world.lua). Functions are globals, so a later definition wins;
--- the engine calls them by name at run time and the harness stubs by name. Waves use the
--- engine's update_spawn with the aggressive globals set in 70_world.
+-- the engine calls them by name at run time and the harness stubs by name.
 
--- a kill drops a fragment (until 23 are aboard - the reaver holds the last) and sometimes a
+-- a kill drops a relic (until 23 are aboard - the reaver holds the last) and sometimes a
 -- salvage canister (white; its kind decides what it restores)
 function hit_foe(j,dmg)
  local f=foes[j]
@@ -26,15 +25,42 @@ function hit_foe(j,dmg)
  end
 end
 
--- pickups (2 fragment, 1/3 fuel, 4 missiles, 5 hull); also the per-frame boss trigger
-function update_drops()
- if qs<3 and p.ore>=RELIC_GOAL-1 and bossq<1 then
+-- waves: a small group arrives, then a salvage break while the field is clear, then the
+-- next (bigger) wave. The reaver comes alone after the wave that brings the count to 23.
+function update_spawn()
+ if arena_dist(p.x,p.y)>ARR then return end
+ if #foes>0 or bossq>0 then return end
+ if not cleared then
+  cleared=true
+  wavet=240
+  msg_set("WAVE CLEARED - SALVAGE")
+  return
+ end
+ wavet-=1
+ if wavet>0 then return end
+ if p.ore>=RELIC_GOAL-1 then
   bossq=1
   local a=rnd(1)
-  spawn_foe("reaver",p.x+cos(a)*210,p.y+sin(a)*210)
+  local x,y=clamp_arena(p.x+cos(a)*210,p.y+sin(a)*210,24)
+  spawn_foe("reaver",x,y)
   msg_set("THE REAVER WAKES")
   sfx(7,2)
+  return
  end
+ wave+=1
+ cleared=false
+ local n=min(2+wave,7)
+ for i=1,n do
+  local a=rnd(1)
+  local x,y=clamp_arena(p.x+cos(a)*(150+rnd(60)),p.y+sin(a)*(150+rnd(60)),24)
+  spawn_foe(rnd(1)<min(0.1+wave*0.08,0.5) and "lancer" or "interceptor",x,y)
+ end
+ msg_set("WAVE "..wave)
+ sfx(7,2)
+end
+
+-- pickups (2 relic, 1/3 fuel, 4 missiles, 5 hull)
+function update_drops()
  for i=#drops,1,-1 do
   local o=drops[i]
   local ddx=p.x-o.x
@@ -50,9 +76,9 @@ function update_drops()
     if k==2 then
      if p.ore<RELIC_GOAL then
       p.ore+=1
-      flt(o.x,o.y-4,"+fragment",12)
-      if p.ore>=RELIC_GOAL then qs=3 msg_set("NAV KEY COMPLETE - DOCK THE ARCHIVE")
-      else msg_set("FRAGMENTS "..p.ore.." / "..RELIC_GOAL) end
+      flt(o.x,o.y-4,"+relic",12)
+      if p.ore>=RELIC_GOAL then qs=3 msg_set("RELICS COMPLETE - DOCK ARCHIVE")
+      else msg_set("RELICS "..p.ore.." / "..RELIC_GOAL) end
      end
     elseif k==4 then p.mis=min(p.mmis,p.mis+2) msg_set("MISSILES +2")
     elseif k==5 then p.hp=min(p.mhp,p.hp+25) msg_set("HULL +25")

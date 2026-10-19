@@ -29,8 +29,9 @@ twist (the sealed cargo is empty), **Ch6** the fork (defect or die loyal), **Ch1
 
 **Status:** Chapter 1 is a complete, playable vertical slice (intro -> mine -> dock -> buy
 hyper-cell -> jump -> warp finale, with save/continue and death-respawn). Chapter 2 is a
-playable **combat** slice (XR-7PO: warp-in -> scavenger picket -> collect **24 navigation
-fragments** from kills -> the reaver boss -> slice the archive terminal -> jump). The docked
+playable **combat** slice (XR-7PO: warp-in recap -> a red resistance pilot's hail -> **paced
+waves** of scavengers with salvage breaks -> collect **24 navigation relics** -> the reaver boss
+-> crack the archive's code -> jump). The docked
 negotiation layer (state 3) is built but currently unused by any chapter. Chapters 3-10 are
 not built.
 
@@ -116,7 +117,7 @@ to **both**): `0` title - `1` story/cutscene - `2` flight - `3` negotiation - `4
 
 A chapter may also **override** engine sim functions by redefining them (they are globals,
 resolved at call time, and the harness stubs by name) when its *rules* differ - e.g. Ch2
-redefines `hit_foe` / `update_drops` / `recover` so kills drop navigation fragments (never
+redefines `hit_foe` / `update_drops` / `recover` so kills drop navigation relics (never
 bounty) and death keeps them. That is the established escape hatch when a generic engine hook
 would not pay its way (section 9); prefer data (`foes_def.n`, `load_system` globals,
 `drops` entries `{x y kind c}`) and hooks first, override only real rule differences.
@@ -274,7 +275,7 @@ Each chapter cart has its **own** 8192 tokens, but the engine is included in eve
 engine tokens are paid N times: **trimming `common/` is the best investment**, and engine
 additions must be justified. Current figure per chapter is in its own `AGENTS.md`.
 
-Current figures (2026-10-19): **Ch1 = 8145 / 8192 (47 free)**, **Ch2 = 8003 / 8192 (189 free)**.
+Current figures (2026-10-19): **Ch1 = 8145 / 8192 (47 free)**, **Ch2 = 8158 / 8192 (34 free)**.
 The shared engine is ~6.3k, so a chapter gets only ~1.5-1.8k for its own content.
 `50_negotiation.lua` is ~378 tokens and is included only by chapters that use `negs` (no chapter
 does now, so nobody pays for the second pillar). The engine grew ~26 tokens for the per-kind
@@ -366,7 +367,7 @@ starting a chapter, copy the previous cart so the label and data come along.
 - **Known gaps in the new systems:** a negotiation's `nres`/ambush flag are not persisted (a reload
   loses the pending ambush) - moot until a chapter uses `negs` again; credits/upgrades are not
   carried between chapters; the `load()` chain only actually swaps carts in the exported bundle.
-- **Cut from Ch2 for the 8192-token wall:** nothing - it sits at 189 free. Ch1 has 47 free:
+- **Cut from Ch2 for the 8192-token wall:** nothing - it sits at 34 free. Ch1 has 47 free:
   second enemy (raider; sprites already in the sheet), charge meter, hit flash, low-HP/fuel HUD
   blink, one-time control hint, dead-space scan side objective are still re-addable.
 - **Possible engine trims** (each pays back in every chapter): merge `wrap`/`wrap_off`
@@ -376,6 +377,14 @@ starting a chapter, copy the previous cart so the label and data come along.
 - **Resolved:** cross-cart progress = multicart bundle (step 6); bundle export mode + `load()`
   chaining hooks are in.
 ## 14. Changelog (brief - full detail is in git)
+
+- [2026-10-19] **XR-7PO: paced waves, warp-in intro, new portraits.** Playtest feedback: the
+  swarm arrived all at once and the terminal text was long. `update_spawn` is now a Ch2 override -
+  a small wave spawns, then a ~8 s salvage break while the field is clear, then a bigger wave;
+  the reaver comes alone once 23 relics are aboard. The chapter opens with the Ch1 warp-out
+  animation (recap + the new goal: recover the coordinates, how is unknown), then a beeping signal
+  and a short hail from a red resistance pilot (new portrait sprite 36); the archive uses a monitor
+  portrait (sprite 38) with trimmed text; "relic" replaces "fragment". Ch2 = 8158/8192 (34 free).
 
 - [2026-10-19] **Jump gate has its own sprite.** The gate used to share the outpost's
   solar-panel silhouette and read as a station. `gen_gfx.py` now bakes a 16x16 pylon portal

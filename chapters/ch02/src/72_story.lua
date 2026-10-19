@@ -1,96 +1,121 @@
--- 72_story: Chapter 2 story - XR-7PO. Arrival and the scavenger picket's hail, the
--- archive's request, the terminal slice, and the warp out. Tone/canon: chapters/ch02/lore.md.
+-- 72_story: Chapter 2 story - XR-7PO. The warp in from Chapter 1, the hostile signal,
+-- the archive's short brief and code crack, and the warp out.
+-- Tone/canon: chapters/ch02/lore.md (the cart's text is authoritative).
 
--- speaker patch tables: PP = pilot, RR = the other voice, NN = narration (no portrait)
+-- speaker patch tables: PP = pilot 1393 (left), RR = the other voice (right), NN = narration
 local PP={w=1}
 local RR={w=2}
 local NN={w=0}
 
+-- right-hand portrait blocks in the sheet (gen_gfx.py): red pilot 36 at (32,16),
+-- terminal 38 at (48,16). Globals so 71_station can pick the terminal portrait too.
+P_RES={32,16}
+P_TERM={48,16}
+
+-- a talk with a chosen right-hand portrait: the engine's PORT table is a global, so the
+-- chapter can show a red pilot and a terminal without an engine change.
+function talk(id,p)
+ PORT[2]=p
+ dlg_start(id)
+end
+
 talks={
- arrive={
+ contact={
   NN,
-  "XR-7PO",
-  "IMPERIUM ARCHIVE - SEALED",
-  "STATUS: STRIPPED, 400 CYCLES",
-  PP,
-  "the wormhole cast me out at the dead edge of the chart.",
-  "xr-7po. an archive the imperium sealed and then forgot.",
-  "someone did not forget it. the wreckage out here is fresh.",
- },
- hail={
+  "INCOMING SIGNAL",
+  "UNREGISTERED CHANNEL",
   RR,
-  "unregistered vessel. this system is claimed.",
-  "dump your hold and your core, and the swarm lets you drift.",
+  "courier. surrender your hold.",
   PP,
-  "...",
+  "no.",
   RR,
-  "no answer. good. the screen was getting bored.",
+  "fine. you're gonna die.",
  },
  archive={
   NN,
   "XR-7PO ARCHIVE",
   "TERMINAL: STILL RUNNING",
   RR,
-  "the terminal speaks with a voice that has not been alive for a long time.",
-  "it kept direction keys for a road it can no longer see.",
-  "the scavengers tore twenty-four of them out. they wear them as trophies.",
-  "bring the fragments back and i will remember where you are going.",
-  PP,
-  "and the scavengers?",
-  RR,
-  "they will send their reaver. they always do.",
+  "i am the last thing awake here.",
+  "the swarm tore out my navigation relics.",
+  "bring them back and i will remember.",
  },
  slice={
   NN,
-  "> inserting 24 fragments",
+  "> relics loaded",
   NN,
-  "> reassembling navigation key",
-  NN,
-  "> the archive remembers",
+  "> code accepted",
   RR,
-  "there. a road, and a name at the end of it.",
-  "the gate will hear you now. go, before the swarm wakes.",
+  "coordinates recovered. the gate is open.",
  },
 }
-talkname={hail="scavenger picket",archive="archive terminal",slice="archive terminal"}
+talkname={contact="resistance pilot",archive="archive terminal",slice="archive terminal"}
 
 function mission_lines()
- if qs<3 then return {"[main] recover the navigation fragments ("..p.ore.."/"..RELIC_GOAL..").",
+ if qs<3 then return {"[main] recover navigation relics ("..p.ore.."/"..RELIC_GOAL..").",
    "[side] salvage wrecks for fuel, missiles and hull."} end
- if qs==3 then return {"[main] dock the archive and slice its terminal."} end
+ if qs==3 then return {"[main] dock the archive and crack the code."} end
  return {"[main] fly to the gate and jump."}
 end
 
 function inventory_lines()
- return {"fragments "..p.ore.." / "..RELIC_GOAL,
+ return {"relics "..p.ore.." / "..RELIC_GOAL,
   "missiles "..p.mis.." / "..p.mmis,
   "hull "..flr(p.hp).." / "..p.mhp,
   "fuel "..flr(p.fuel).." / "..p.mfuel,
   "cargo: sealed (br-11k0)"}
 end
 
+-- warp in from Chapter 1: the recap and the new goal. Keep lines <= 31 chars.
+local JIN={
+ "the blockade is behind you.",
+ "you fitted a cell and jumped.",
+ "the wormhole cast you out here.",
+ "xr-7po: a dead archive.",
+ "the coordinates are inside it.",
+ "you don't know how yet.",
+ "survive. recover them. get out.",
+}
+
+-- warp out
+local JOUT={
+ "the gate opens onto a road.",
+ "the coordinates lead somewhere.",
+ "xr-7po is dark behind you.",
+ "the crate is still sealed.",
+ "(to be continued...)",
+}
+
 function init_story()
  qs=1
  ohint=false
  slicing=nil
  bossq=0
+ wave=0
+ wavet=240
+ cleared=true
+ intro=false
  spg=1
  spt=0
  dg=nil
  p.credits=0
  p.mcargo=RELIC_GOAL
- spages={{kind="dlg",id="arrive"},{kind="dlg",id="hail"}}
+ jlines=JIN
+ spages={{kind="dlg",id="contact"}}
 end
 
+-- a new game replays the warp that ended Chapter 1
 function start_story()
- spg=1
- spt=0
+ intro=true
+ jlines=JIN
+ jt=0
+ state=5
 end
 
 function update_story()
  local pg=spages[spg]
  spt+=1
- if spt==1 then dlg_start(pg.id) end
+ if spt==1 then talk(pg.id,P_RES) end
  update_dlg()
  if dg==nil then next_spage() end
 end
@@ -101,24 +126,24 @@ end
 
 function start_jump()
  if qs<4 then
-  msg_set("GATE LOCKED - NAV KEY INCOMPLETE")
+  msg_set("GATE LOCKED - NO COORDINATES")
   return
  end
  state=5
  jt=0
+ jlines=JOUT
  sfx(7,3)
 end
 
--- warp out of XR-7PO. Keep every line <= 31 chars (shots clipping sweep).
-jlines={
- "xr-7po goes dark behind you.",
- "a dead archive, stripped bare.",
- "the crate never opened.",
- "ahead: a road, and a name.",
- "(to be continued...)",
-}
-
--- end of chapter: hand off to ch03 in a multicart; a lone cart falls back to the title
+-- the intro warp ends in the incoming signal; the final warp hands off to Ch3
 function jump_end()
- if load("ch03")==false then reset_game() end
+ if intro then
+  intro=false
+  spg=1
+  spt=0
+  state=1
+  sfx(7,1)
+ else
+  if load("ch03")==false then reset_game() end
+ end
 end

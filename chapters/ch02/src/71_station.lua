@@ -12,26 +12,26 @@ function dock(s)
  active=s
  local items={
   {label="LOCAL INDEX",act=function(m)
-   m.sub=p.ore.." of "..RELIC_GOAL.." fragments recovered."
+   m.sub=p.ore.." of "..RELIC_GOAL.." relics recovered."
   end}
- }
- -- once all fragments are aboard, the terminal can be read
- if qs>=3 then
-  add(items,{label="SLICE TERMINAL",act=function(m)
-   if qs>=4 then m.sub="COORDINATES ALREADY LOGGED" return end
-   slicing=true
-   dlg_start("slice")
-  end})
- end
+  }
+  -- once all relics are aboard, the code can be cracked
+  if qs>=3 then
+   add(items,{label="CRACK THE CODE",act=function(m)
+    if qs>=4 then m.sub="COORDINATES ALREADY LOGGED" return end
+    slicing=true
+    talk("slice",P_TERM)
+   end})
+  end
  sm=menu_new("XR-7PO ARCHIVE",items)
  sfx(6,3)
  set_music(MUS_STATION)
  state=4
- -- first dock: the archive explains what it lost
- if not ohint then
-  ohint=true
-  dlg_start("archive")
- end
+  -- first dock: the archive explains what it lost
+  if not ohint then
+   ohint=true
+   talk("archive",P_TERM)
+  end
  save_game()
 end
 
@@ -42,7 +42,7 @@ function update_station()
   if dg==nil and slicing then
    slicing=nil
    qs=4
-   msg_set("NAV KEY REBUILT - GATE UNLOCKED")
+   msg_set("COORDINATES RECOVERED")
    save_game()
   end
   return
@@ -55,7 +55,7 @@ function draw_station()
  rectfill(6,6,121,121,1)
  rect(6,6,121,121,GT)
  if dg then draw_dlg() return end
- print("fragments "..p.ore.."/"..RELIC_GOAL,10,18,12)
+ print("relics "..p.ore.."/"..RELIC_GOAL,10,18,12)
  menu_show(sm)
  pc(BX.." select  "..BO.." undock",112,GT)
 end
@@ -66,7 +66,7 @@ function recover()
  p.hp=p.mhp p.shd=p.mshd p.fuel=p.mfuel
  p.dx=0 p.dy=0 p.chg=0 p.scd=0 p.ramt=0
  p.x=active.x p.y=active.y+18
- msg_set("RECOVERED - FRAGMENTS INTACT")
+ msg_set("RECOVERED - RELICS INTACT")
  save_game()
  state=2
 end

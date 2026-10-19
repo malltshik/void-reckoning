@@ -2,9 +2,9 @@
 -- scavengers. It is a pure fight: no ore, no trade - the hold carries navigation keys.
 --
 -- XR-7PO's rules differ from the engine defaults, so this chapter *overrides* the engine
--- sim functions that encode them (71_station/73_combat): update_spawn (waves + the reaver),
--- hit_foe / hit_roid (drops), update_drops (pickup kinds), recover (death keeps the keys).
--- The enemy salvo (foes_def.n) and drop colours (drop.c) are engine features driven by data.
+-- sim functions that encode them (71_station/73_combat): update_spawn (paced waves + the
+-- reaver), hit_foe / hit_roid (drops), update_drops (pickup kinds), recover (death keeps the
+-- keys). The enemy salvo (foes_def.n) and drop colours (drop.c) are engine features driven by data.
 
 CHAPTER=2   -- seeds the system layout (srand 1000+CHAPTER) and tags the save
 
@@ -12,14 +12,7 @@ CHAPTER=2   -- seeds the system layout (srand 1000+CHAPTER) and tags the save
 SPR_RAIDER=16
 SPR_MILITIA=24
 
--- aggression: a fight, not a mining run - short lulls and bigger swarms than Ch1
-FOE_CAP=10
-SPAWN_MIN=300
-SPAWN_VAR=300
-WAVE_MIN=3
-WAVE_VAR=3
-
-RELIC_GOAL=24   -- navigation fragments needed; the 24th is torn from the reaver
+RELIC_GOAL=24   -- navigation relics needed; the 24th is torn from the reaver
 
 foes_def={
  interceptor={hp=30,shd=0,spd=1.15,r=4,cd=24,range=105,dmg=5,bs=3.0,spr=SPR_SCOUT},
@@ -35,9 +28,9 @@ function ch_stations()
  add(stations,{x=136,y=392,kind="gate"})
 end
 
--- opening picket: called LAST by load_system so the seeded RNG order stays stable
+-- no opening patrol: the first wave arrives after the warp-in signal (73_combat.update_spawn),
+-- and this hook is still called LAST by load_system so the seeded RNG order stays stable
 function ch_foes()
- for i=1,4 do spawn_foe("interceptor",ARX-60+rnd(120),ARY+rnd(140)) end
 end
 
 -- compass: while hunting it tracks the nearest drone; then the archive, then the gate

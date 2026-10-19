@@ -6,16 +6,21 @@
 _init()
 ck(state==0 and not hassave,"boots to the title with no save")
 
--- arrival: two dialogue pages, then flight
+-- the warp in: Chapter 1 recap, then the incoming signal, then flight
 press(5)
-ck(state==1,"X on the title starts the story")
+ck(state==5,"X on the title starts the warp-in")
+for i=1,600 do
+ if state!=5 then break end
+ press(5)
+end
+ck(state==1,"the warp hands over to the incoming signal")
 for i=1,3000 do
  if state!=1 then break end
  press(5)
 end
-ck(state==2,"the arrival hands over to flight")
+ck(state==2,"the signal hands over to flight")
 ck(p.hp==100 and p.fuel==100 and qs==1,"fresh ship, first quest stage")
-ck(p.mcargo==RELIC_GOAL,"the hold carries fragments, not ore")
+ck(p.mcargo==RELIC_GOAL,"the hold carries relics, not ore")
 local k=stations[1]
 local g=stations[2]
 
@@ -39,7 +44,7 @@ local m0=p.mis
 press(4)
 ck(p.mis==m0-1 and #missiles>0,"Z launches a missile")
 
--- a kill drops a fragment and pays no bounty
+-- a kill drops a relic and pays no bounty
 foes={} drops={}
 spawn_foe("interceptor",p.x+60,p.y)
 local c0=p.credits
@@ -48,12 +53,12 @@ ck(#foes==0,"a kill clears the foe")
 ck(p.credits==c0,"scavengers pay no bounty")
 local frag=nil
 for d in all(drops) do if d.kind==2 then frag=d end end
-ck(frag!=nil,"a kill drops a navigation fragment")
+ck(frag!=nil,"a kill drops a navigation relic")
 
--- flying over the fragment recovers it
+-- flying over the relic recovers it
 p.x=frag.x p.y=frag.y
 tick(2)
-ck(p.ore==1,"flying over a fragment recovers it")
+ck(p.ore==1,"flying over a relic recovers it")
 
 -- salvage canisters restore fuel
 drops={}
@@ -69,26 +74,35 @@ p.ore=0
 hit_roid(1,99)
 local onlysal=true
 for d in all(drops) do if d.kind==2 then onlysal=false end end
-ck(onlysal,"asteroid wrecks never drop fragments")
+ck(onlysal,"asteroid wrecks never drop relics")
 
--- the reaver wakes when the archive is one fragment short
+-- waves: the first one arrives as a group, and clearing it opens a salvage break
+foes={} p.ore=0 bossq=0 cleared=true wavet=0
+update_spawn()
+ck(#foes==3,"the first wave is a group of 3")
+foes={} cleared=false
+update_spawn()
+ck(cleared and wavet==240,"a cleared wave starts a salvage break")
+
+-- the reaver wakes when the archive is one relic short
 foes={} drops={}
 p.x=ARX p.y=ARY
 p.ore=RELIC_GOAL-1
-update_drops()
+bossq=0 cleared=true wavet=0
+update_spawn()
 local boss=0
 for f in all(foes) do if f.kind=="reaver" then boss+=1 end end
-ck(boss==1,"the reaver wakes at 23 fragments")
+ck(boss==1,"the reaver wakes at 23 relics")
 
--- killing the reaver drops the last fragment; collecting it rebuilds the key
+-- killing the reaver drops the last relic; collecting it completes the set
 drops={}
 hit_foe(1,999)
 frag=nil
 for d in all(drops) do if d.kind==2 then frag=d end end
-ck(frag!=nil,"the reaver drops the final fragment")
+ck(frag!=nil,"the reaver drops the final relic")
 p.x=frag.x p.y=frag.y
 tick(2)
-ck(p.ore==RELIC_GOAL and qs==3,"the 24th fragment rebuilds the nav key")
+ck(p.ore==RELIC_GOAL and qs==3,"the 24th relic completes the set")
 
 -- a lancer's volley is a fan of bullets, not one shot
 foes={} bullets={}
@@ -100,7 +114,7 @@ local nb=0
 for b in all(bullets) do nb+=1 end
 ck(nb>=3,"a lancer fires a salvo of 3")
 
--- dock: the archive speaks, then the terminal slices the nav key
+-- dock: the archive speaks, then the terminal cracks the code
 foes={} bullets={}
 p.x=k.x p.y=k.y+8
 press(5)
@@ -112,27 +126,27 @@ for i=1,300 do
 end
 ck(dg==nil and ohint,"the archive sets the mission hint")
 ck(dget(8)==1,"docking saves")
-ck(#sm.items>=2,"the slice option is available with the key complete")
+ck(#sm.items>=2,"the code-crack option is available with the set complete")
 sm.i=2
 press(5)
-ck(dg!=nil and slicing,"choosing SLICE runs the terminal")
+ck(dg!=nil and slicing,"choosing CRACK THE CODE runs the terminal")
 for i=1,300 do
  if not dg then break end
  press(5)
 end
 tick(2)
-ck(qs==4,"the sliced terminal rebuilds the nav key")
--- the option is now stale: it must refuse a second slice
+ck(qs==4,"cracking the code recovers the coordinates")
+-- the option is now stale: it must refuse a second crack
 sm.sub=""
 press(5)
-ck(sm.sub=="COORDINATES ALREADY LOGGED","the terminal cannot be sliced twice")
+ck(sm.sub=="COORDINATES ALREADY LOGGED","the terminal cannot be cracked twice")
 press(4)
 ck(state==2,"Z undocks")
 
--- death keeps the fragments (they are the progress, and there is no money to strip)
+-- death keeps the relics (they are the progress, and there is no money to strip)
 p.ore=7
 recover()
-ck(p.ore==7 and state==2,"recovery keeps the fragments")
+ck(p.ore==7 and state==2,"recovery keeps the relics")
 ck(p.hp==p.mhp and p.fuel==p.mfuel,"recovery refits the ship")
 
 -- leave: the rebuilt key opens the gate

@@ -79,7 +79,7 @@ ORDER = ["player", "scout", "raider", "mil"]  # sprite bases 0,8,16,24
 
 # 16x16 character portraits for the dialogue screen (placed as sprite blocks;
 # the Lua side draws them with sspr - see PORT in common/src/60_dialogue.lua).
-PORTRAITS = {"pilot": 32, "rook": 34}  # sprite index of the block's top-left
+PORTRAITS = {"pilot": 32, "rook": 34, "res": 36, "term": 38}  # sprite index of the block's top-left
 
 # The jump gate: a 16x16 block (sprites 40,41,56,57 - a free slot) of two pylons
 # joined by a beam, deliberately unlike the ring outpost. The chapter draws the
@@ -130,6 +130,44 @@ P_ART = {
         ".cccccccccccccc.",
         ".ccc77777777ccc.",
         ".cccccccccccccc.",
+    ],
+    # red/orange resistance pilot - the pilot art recoloured (8 red helmet, 9 orange rim)
+    "res": [
+        "................",
+        "....99999999....",
+        "..998888888899..",
+        ".98888888888889.",
+        ".98811111111889.",
+        ".98111111111189.",
+        ".98111111111189.",
+        ".98111111111189.",
+        ".98111111111189.",
+        ".98111111111189.",
+        ".98811111111889.",
+        ".98888888888889.",
+        "..998888888899..",
+        "..888888888888..",
+        "..999999999999..",
+        "................",
+    ],
+    # the archive terminal - a grey monitor face with green glyphs
+    "term": [
+        ".......66.......",
+        "................",
+        "..666666666666..",
+        "..655555555556..",
+        "..651111111156..",
+        "..6511bb11bb56..",
+        "..651111111156..",
+        "..651b1b1b1b56..",
+        "..651111111156..",
+        "..655555555556..",
+        "..666666666666..",
+        "......6666......",
+        "......6666......",
+        "....66666666....",
+        "................",
+        "................",
     ],
 }
 

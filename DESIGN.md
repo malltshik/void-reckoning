@@ -212,7 +212,7 @@ militia (24) already exist in the sheet.
 | Ch | System (working name) | Role | Beat |
 | :-- | :-- | :-- | :-- |
 | **1** | Vector-Alpha | Thaw | Wake adrift post-wormhole; ship AI restates the mission. Tutorial: fly, salvage fuel, first skirmish, dock. Nav data corrupted → hop toward the relay. |
-| **2** | XR-7PO | The archive's dead face | A stripped Imperium archive. Scavenger picket hails you; kill the swarm for **24 navigation fragments** (the hold carries keys, not ore), the **reaver** wakes at 23 and holds the last, then dock the archive and **slice its terminal** to rebuild the nav key. Pure-combat chapter: no trade, salvage from wrecks. |
+| **2** | XR-7PO | The archive's dead face | Opens with the Ch1 warp-out, then a red resistance pilot's short hail. A stripped Imperium archive. **Paced waves** of scavengers (with salvage breaks) - kill them for **24 navigation relics** (the hold carries keys, not ore); the **reaver** wakes at 23 and holds the last; dock the archive and **crack its code**. Pure-combat chapter: no trade, salvage from wrecks. |
 | **3** | Oort-Novex | **Twist 1** | After the objective, a quiet beat: break protocol, open the crate — **empty**. A Resistance agent hails you (the demo's big negotiation). You chase the truth; agent gives **BR-11K0**'s true coordinates with a warning. |
 | **4** | Helios-9 | Doubt | Radiation frontier; the Imperium's orders turn dirty. Witness the machine up close. |
 | **5** | BR-11K0 | **Twist 2** | Reach the dead world: its entire population was exterminated centuries ago to "combat bio-social contamination." You realize *you* are contamination. |
@@ -286,7 +286,7 @@ dozen projectiles/particles. Off-screen sim is not culled (the field is small).
 **Token budget (hard 8,192 per cart) — reality check.** The original plan was an even split across
 systems (flight 450, enemy AI 900, negotiation 700, boss 700, …). As built (2026-10-19), the shared
 engine (`common/src`) is **~6.3k tokens** and every chapter cart pays it again, leaving ~1.5–1.8k for
-chapter content. Measured: **Ch1 = 8,145 / 8,192 (47 free)**, **Ch2 = 8,003 / 8,192 (189 free)**.
+chapter content. Measured: **Ch1 = 8,145 / 8,192 (47 free)**, **Ch2 = 8,158 / 8,192 (34 free)**.
 The negotiation engine is `common/src/50_negotiation.lua` at **~378 tokens**, and it is *optional* -
 only chapters that define `negs` include it (neither current chapter does, so neither pays for the
 second pillar; Ch2 instead redefines the engine's `hit_foe`/`update_drops`/`recover` for its rules).
