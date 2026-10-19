@@ -5,7 +5,8 @@ from collections import Counter
 #   python common/tools/gen_gfx.py chapters/ch01/ch01.p8
 # Sheet layout: sprites 0-7 player, 8-15 scout, 16-23 raider, 24-31 militia (8 angle
 # frames each; ch01 only uses player + scout - the rest are ready for later chapters),
-# 32-35 / 48-51 the two 16x16 dialogue portraits (pilot=32, rook=34).
+# 32-35 / 48-51 the two 16x16 dialogue portraits (pilot=32, rook=34), and the 16x16
+# jump-gate block at 40-41 / 56-57 (see GATE_IDX).
 # ---------------------------------------------------------------------------
 # Original sprite art for Void Reckoning (hand-drawn, our own - no third party).
 # We hand-draw only the N frame; the generator derives the rest: the four
@@ -79,6 +80,18 @@ ORDER = ["player", "scout", "raider", "mil"]  # sprite bases 0,8,16,24
 # 16x16 character portraits for the dialogue screen (placed as sprite blocks;
 # the Lua side draws them with sspr - see PORT in common/src/60_dialogue.lua).
 PORTRAITS = {"pilot": 32, "rook": 34}  # sprite index of the block's top-left
+
+# The jump gate: a 16x16 block (sprites 40,41,56,57 - a free slot) of two pylons
+# joined by a beam, deliberately unlike the ring outpost. The chapter draws the
+# shimmering field between the pylons itself (see draw_stations), so the centre
+# stays transparent. Drawn at pixels (64,16) with sspr(64,16,16,16,...).
+GATE_IDX = 40
+def gate_art():
+    # a grey frame (two 3px pylons + crossbars) with the portal field left transparent
+    # for the chapter to draw; the inner pylon edge is lit white.
+    return (["..666666666666.."] +
+            ["..667......766.."] * 14 +
+            ["..666666666666.."])
 P_ART = {
     # pilot 1393 - blue helmet, dark visor, white rim
     "pilot": [
@@ -212,6 +225,12 @@ def build_gfx():
                 ch = row[x]
                 if ch != ".":
                     grid[ty + y][tx + x] = int(ch, 16)
+    tx = (GATE_IDX % 16) * 8
+    ty = (GATE_IDX // 16) * 8
+    for y, row in enumerate(gate_art()):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                grid[ty + y][tx + x] = int(ch, 16)
     return ["".join("%x" % v for v in row) for row in grid]
 
 

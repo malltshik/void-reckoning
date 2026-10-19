@@ -5,7 +5,7 @@ contract, PICO-8 gotchas, tooling and shared rules. This file carries only what 
 to Chapter 1**, so work on later chapters isn't burdened by it. Story canon:
 `chapters/ch01/lore.md`.
 
-- **Cart budget:** 8156 / 8192 tokens (36 free) at the 2026-10-19 handover - measure with
+- **Cart budget:** 8145 / 8192 tokens (47 free) at the 2026-10-19 handover - measure with
   `p8check tokens ch01` before and after any change. ~40k / 65k chars. Each chapter is its own
   cart with its own 8192 budget (root `AGENTS.md` section 9). Web export: ~29k chars once comments
   are stripped, ~4.7k compressed bytes under the 15,360 limit (`p8check size ch01`).

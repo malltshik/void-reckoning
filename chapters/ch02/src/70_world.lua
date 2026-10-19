@@ -64,11 +64,10 @@ function draw_stations()
    pset(x,y-13,frame%40<20 and 8 or 2)
    print("ARCHIVE",x-14,y-18,GT)
   else
-   -- relay satellite gate
-   rectfill(x-2,y-5,x+2,y+5,13)
-   rectfill(x-9,y-3,x-4,y+3,14) rectfill(x+4,y-3,x+9,y+3,14)
-   line(x,y-5,x,y-9,5)
-   circfill(x,y-10,1,frame%30<15 and 7 or 12)
+   -- jump gate: two pylons with a shimmering field between them (sprite 40)
+   rectfill(x-3,y-7,x+2,y+6,frame%40<20 and 12 or 13)
+   sspr(64,16,16,16,x-8,y-8)
+   pset(x,y-8,frame%24<12 and 7 or 13)
    print("GATE",x-9,y-18,GT)
   end
  end

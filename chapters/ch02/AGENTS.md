@@ -7,7 +7,7 @@ Story canon/tone: `chapters/ch02/lore.md` (the cart's text is authoritative).
 an earlier plan (Kaelus Prime, negotiation); the built chapter is XR-7PO. Negotiator engine is
 not included (no `negs`).
 
-- **Cart budget:** 8025 / 8192 tokens (167 free), ~41.6k chars. No `50_negotiation.lua` include
+- **Cart budget:** 8003 / 8192 tokens (189 free), ~41.6k chars. No `50_negotiation.lua` include
   (~378 tokens saved). Measure with `p8check tokens ch02`.
 - **Verification:** `p8check all ch02` = tokens + smoke (35+ assertions) + 14 staged screens
   (`tmp/shots/ch02_*.png`) with a text-clipping sweep.

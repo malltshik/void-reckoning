@@ -286,7 +286,7 @@ dozen projectiles/particles. Off-screen sim is not culled (the field is small).
 **Token budget (hard 8,192 per cart) — reality check.** The original plan was an even split across
 systems (flight 450, enemy AI 900, negotiation 700, boss 700, …). As built (2026-10-19), the shared
 engine (`common/src`) is **~6.3k tokens** and every chapter cart pays it again, leaving ~1.5–1.8k for
-chapter content. Measured: **Ch1 = 8,182 / 8,192 (10 free)**, **Ch2 = 8,025 / 8,192 (167 free)**.
+chapter content. Measured: **Ch1 = 8,145 / 8,192 (47 free)**, **Ch2 = 8,003 / 8,192 (189 free)**.
 The negotiation engine is `common/src/50_negotiation.lua` at **~378 tokens**, and it is *optional* -
 only chapters that define `negs` include it (neither current chapter does, so neither pays for the
 second pillar; Ch2 instead redefines the engine's `hit_foe`/`update_drops`/`recover` for its rules).

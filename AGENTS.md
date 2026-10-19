@@ -274,11 +274,11 @@ Each chapter cart has its **own** 8192 tokens, but the engine is included in eve
 engine tokens are paid N times: **trimming `common/` is the best investment**, and engine
 additions must be justified. Current figure per chapter is in its own `AGENTS.md`.
 
-Current figures (2026-10-19): **Ch1 = 8182 / 8192 (10 free)**, **Ch2 = 8025 / 8192 (167 free)**.
+Current figures (2026-10-19): **Ch1 = 8145 / 8192 (47 free)**, **Ch2 = 8003 / 8192 (189 free)**.
 The shared engine is ~6.3k, so a chapter gets only ~1.5-1.8k for its own content.
 `50_negotiation.lua` is ~378 tokens and is included only by chapters that use `negs` (no chapter
 does now, so nobody pays for the second pillar). The engine grew ~26 tokens for the per-kind
-enemy salvo (`foes_def.n`) and the drop-colour field (`drop.c`) - Ch1 has only 10 free, so the
+enemy salvo (`foes_def.n`) and the drop-colour field (`drop.c`) - Ch1 has only 47 free, so the
 **next engine addition will need a trim first** (candidates below). Ch2 fit by implementing its
 rules as chapter overrides instead of engine features. If you are out of room: measure first
 (`p8check tokens`), then look for duplicated helpers (`wrap` vs `wrap_off`), one-use locals, and
@@ -366,7 +366,7 @@ starting a chapter, copy the previous cart so the label and data come along.
 - **Known gaps in the new systems:** a negotiation's `nres`/ambush flag are not persisted (a reload
   loses the pending ambush) - moot until a chapter uses `negs` again; credits/upgrades are not
   carried between chapters; the `load()` chain only actually swaps carts in the exported bundle.
-- **Cut from Ch2 for the 8192-token wall:** nothing - it sits at 167 free. Ch1 has 10 free:
+- **Cut from Ch2 for the 8192-token wall:** nothing - it sits at 189 free. Ch1 has 47 free:
   second enemy (raider; sprites already in the sheet), charge meter, hit flash, low-HP/fuel HUD
   blink, one-time control hint, dead-space scan side objective are still re-addable.
 - **Possible engine trims** (each pays back in every chapter): merge `wrap`/`wrap_off`
@@ -376,6 +376,13 @@ starting a chapter, copy the previous cart so the label and data come along.
 - **Resolved:** cross-cart progress = multicart bundle (step 6); bundle export mode + `load()`
   chaining hooks are in.
 ## 14. Changelog (brief - full detail is in git)
+
+- [2026-10-19] **Jump gate has its own sprite.** The gate used to share the outpost's
+  solar-panel silhouette and read as a station. `gen_gfx.py` now bakes a 16x16 pylon portal
+  (grey frame, lit inner edge, transparent field) at sprite block 40 (free; 40,41,56,57);
+  `draw_stations` (Ch1 + Ch2) draws it with `sspr(64,16,16,16,...)` and a pulsing blue/lavender
+  field between the pylons. The outpost stays a ring/wheel. Re-running `gen_gfx.py` on both carts
+  is required (the sheet changed). Ch1 8145 (47 free), Ch2 8003 (189 free).
 
 - [2026-10-19] **Chapter 2 rebuilt as XR-7PO (original script).** Pure combat: warp-in ->
   scavenger picket hail -> collect **24 navigation fragments** from kills -> the **reaver** boss
