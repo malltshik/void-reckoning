@@ -14,6 +14,10 @@
 	// if the browser can not create an audio context outside of a user gesture (e.g. on iOS), p8_autoplay has no effect
 	var p8_autoplay = false;
 
+	// bump this every time docs/*.js is re-exported - it cache-busts the cart script so GitHub
+	// Pages / the browser don't keep serving a stale export
+	var p8_cart_ver = 2;
+
 	// When pico8_state is defined, PICO-8 will set .is_paused, .sound_volume and .frame_number each frame 
 	// (used for determining button icons)
 	var pico8_state = [];
@@ -630,7 +634,7 @@
 
 		}
 		e.type = "application/javascript";
-		e.src = (new URLSearchParams(location.search)).get("cart") || "ch01.js";
+		e.src = ((new URLSearchParams(location.search)).get("cart") || "ch01.js") + "?v=" + p8_cart_ver;
 		e.id = "e_script";
 		
 		document.body.appendChild(e); // load and run
